@@ -91,9 +91,9 @@ async def login(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User account is not active"
         )
-
-    access_token = create_access_token(subject=user.user_name)
-    refresh_token = create_refresh_token(subject=user.user_name)
+    
+    access_token = create_access_token(subject=str(user.id))
+    refresh_token = create_refresh_token(subject=str(user.id))
     # For production, set secure, samesite as needed
     response.set_cookie(
         key="refresh_token",

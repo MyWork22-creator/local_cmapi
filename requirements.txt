@@ -1,8 +1,11 @@
 fastapi==0.111.0
 uvicorn[standard]==0.30.0
-SQLAlchemy==2.0.30
 pydantic==2.8.2
 pydantic-settings==2.3.4
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
 slowapi==0.1.9  # For rate limiting
+pymysql>=1.1.0
+sqlalchemy>=2.0.42
+faker
+pyjwt

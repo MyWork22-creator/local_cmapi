@@ -21,6 +21,8 @@ def seed_data():
                 "roles:read",
                 "roles:write",
                 "roles:delete",
+                "banks:read",
+                "banks:write",
             ],
         )
 

@@ -1,6 +1,7 @@
 # Environment and Virtual Environments
 /venv
 /env
+/myenv
 /env.local
 /env.development.local
 /env.test.local
