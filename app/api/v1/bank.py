@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session, joinedload
 from app.database import get_db
 from app.models.banks import Bank
 from app.models.user import User
-from app.schemas.bank import BankCreate, BankUpdate, BankResponse
+from app.schemas.bank import BankCreate, BankUpdate, BankResponse,BankDeletionResponse
 from app.schemas.common import ErrorResponse, ListResponse, MessageResponse
 from app.core.dependencies import get_current_user, require_permissions
 
@@ -21,7 +21,7 @@ router = APIRouter(prefix="/banks", tags=["banks"])
 def create_bank(
     payload: BankCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_permissions(["banks:create"]))
+    current_user: User = Depends(require_permissions(["banks:write"]))
 ):
     # Simple uniqueness on bank_name (application-level)
     existing = db.query(Bank).filter(Bank.bank_name == payload.bank_name).first()
@@ -48,7 +48,7 @@ def list_banks(
     limit: int = 50,
     offset: int = 0,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_permissions(["banks:list"]))
+    current_user: User = Depends(require_permissions(["banks:read"]))
 ):
     q = db.query(Bank).options(joinedload(Bank.created_by_user).joinedload(User.role))
     total = q.count()
@@ -99,7 +99,7 @@ def update_bank(
     return bank
 
 
-@router.delete("/{bank_id}", response_model=MessageResponse, responses={
+@router.delete("/{bank_id}", response_model=BankDeletionResponse, responses={
     401: {"model": ErrorResponse},
     403: {"model": ErrorResponse},
     404: {"model": ErrorResponse}
@@ -113,7 +113,16 @@ def delete_bank(
     if not bank:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Bank not found")
 
+    # Store the details before deleting the object
+    response_data = {
+        "bank_id": bank.bank_id,
+        "bank_name": bank.bank_name,
+        "created_by_user_id": bank.created_by_user_id
+    }
+
     db.delete(bank)
     db.commit()
-    return MessageResponse(message="Bank deleted successfully")
+
+    # Return the detailed response
+    return BankDeletionResponse(**response_data)
 

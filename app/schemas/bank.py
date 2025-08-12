@@ -5,10 +5,9 @@ This module contains all the Pydantic models used for bank-related API endpoints
 including request validation, response serialization, and documentation.
 """
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from pydantic import BaseModel, Field, field_validator
 from app.core.validators import bank_name_validator,url_validator
-
 
 class BankBase(BaseModel):
     """
@@ -59,6 +58,7 @@ class BankCreate(BankBase):
     Inherits all fields from BankBase and makes bank_name required.
     Used for POST /banks/ endpoint.
     """
+    
     bank_name: str = Field(
         ...,
         min_length=2,
@@ -85,6 +85,7 @@ class BankUpdate(BaseModel):
     All fields are optional to support partial updates.
     Used for PUT /banks/{bank_id} endpoint.
     """
+    
     bank_name: Optional[str] = Field(
         None,
         min_length=2,
@@ -131,60 +132,32 @@ class BankUpdate(BaseModel):
             }
         }
 
+class BankDeletionResponse(BaseModel):
+    """
+    Schema for a detailed response after a bank has been deleted.
+    """
+    message: str = "Bank deleted successfully"
+    bank_id: int
+    bank_name: str
+    created_by_user_id: Optional[int]
+    timestamp: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        example="2025-08-12T07:06:45.547759Z",
+        description="Response timestamp"
+    )
+
 
 class BankResponse(BankBase):
-    """
-    Schema for bank response data.
-
-    Includes all bank information plus system-generated fields.
-    Used for all bank retrieval endpoints.
-    """
-    bank_id: int = Field(
-        ...,
-        example=1,
-        description="Unique identifier for the bank"
-    )
-    created_by_user_id: Optional[int] = Field(
-        None,
-        example=1,
-        description="ID of the user who created this bank"
-    )
-    created_at: datetime = Field(
-        ...,
-        example="2024-01-01T00:00:00Z",
-        description="Timestamp when the bank was created"
-    )
-    updated_at: datetime = Field(
-        ...,
-        example="2024-01-01T12:00:00Z",
-        description="Timestamp when the bank was last updated"
-    )
-    
-    created_by_user: Optional["UserWithRole"] = Field(
-        None,
-        description="User who created this bank"
-    )
+    bank_id: int 
+    created_by_user_id: Optional[int]
+    created_at: datetime
+    updated_at: datetime
 
     model_config = {
         "from_attributes": True,
-        "json_schema_extra": {
-            "example": {
-                "bank_id": 1,
-                "bank_name": "ABC Bank",
-                "logo": "https://example.com/abc-logo.png",
-                "description": "Leading bank with excellent customer service",
-                "created_by_user_id": 1,
-                "created_at": "2024-01-01T00:00:00Z",
-                "updated_at": "2024-01-01T12:00:00Z",
-                "created_by_user": {
-                    "id": 1,
-                    "username": "admin",
-                    "status": True,
-                    "role_name": "Administrator"
-                }
-            }
-        }
+        "extra": "forbid"
     }
+
 
 
 class BankSummary(BaseModel):

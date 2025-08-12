@@ -134,5 +134,5 @@ app.openapi = custom_openapi
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(users_router.router, prefix="/api/v1", tags=["users"])
 app.include_router(roles_router.router, prefix="/api/v1", tags=["roles"])
-app.include_router(banks_router.router, prefix="/api/v1", tags=["/banks"])
+app.include_router(banks_router.router, prefix="/api/v1", tags=["banks"])
 #app.include_router(rbac_test_router.router, prefix="/api/v1", tags=["rbac-testing"])

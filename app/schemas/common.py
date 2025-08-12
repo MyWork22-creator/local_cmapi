@@ -6,6 +6,8 @@ error handling, and pagination.
 """
 from typing import Generic, List, Optional, TypeVar, Any, Dict
 from pydantic import BaseModel, Field
+from datetime import datetime, timezone
+
 
 T = TypeVar("T")
 
@@ -70,8 +72,8 @@ class MessageResponse(BaseModel):
         example="Operation completed successfully",
         description="Success message"
     )
-    timestamp: Optional[str] = Field(
-        None,
+    timestamp: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
         example="2024-01-01T12:00:00Z",
         description="Response timestamp"
     )

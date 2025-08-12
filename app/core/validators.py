@@ -5,6 +5,7 @@ import re
 from typing import Any, Optional
 from pydantic import field_validator, ValidationInfo
 from app.core.exceptions import ValidationError
+from urllib.parse import urlparse
 
 
 class CommonValidators:
@@ -159,25 +160,13 @@ class CommonValidators:
     
     @staticmethod
     def validate_url(url: str) -> str:
-        """
-        Validate URL format.
-        
-        Args:
-            url: URL to validate
-            
-        Returns:
-            Validated URL
-            
-        Raises:
-            ValidationError: If URL format is invalid
-        """
         if not url:
             raise ValidationError("URL cannot be empty")
-        
-        url_pattern = r'^https?:\/\/(?:[-\w.])+(?:\:[0-9]+)?(?:\/(?:[\w\/_.])*(?:\?(?:[\w&=%.])*)?(?:\#(?:[\w.])*)?)?$'
-        if not re.match(url_pattern, url):
+    
+        parsed = urlparse(url)
+        if parsed.scheme not in ("http", "https") or not parsed.netloc:
             raise ValidationError("Invalid URL format")
-        
+    
         return url
     
     @staticmethod

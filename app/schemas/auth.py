@@ -45,16 +45,7 @@ class RoleUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
 
-class RoleOut(BaseModel):
-    id: int
-    name: str
-    description: Optional[str] = None
-    created_at: datetime
-    updated_at: datetime
-    permissions: List[dict] = []
 
-    class Config:
-        from_attributes = True
 
 class PermissionOut(BaseModel):
     id: int
@@ -62,6 +53,17 @@ class PermissionOut(BaseModel):
     description: Optional[str] = None
     created_at: datetime
     updated_at: datetime
+
+    class Config:
+        from_attributes = True
+        
+class RoleOut(BaseModel):
+    id: int
+    name: str
+    description: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+    permissions: List[PermissionOut] = []
 
     class Config:
         from_attributes = True

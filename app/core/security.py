@@ -76,9 +76,9 @@ def verify_token(token: str, token_type: str = "access") -> TokenData:
     )
     
     try:
-        print(f"Decoding token: {token[:10]}... with SECRET_KEY: {settings.SECRET_KEY}, ALGORITHM: {settings.ALGORITHM}")
+        #print(f"Decoding token: {token[:10]}... with SECRET_KEY: {settings.SECRET_KEY}, ALGORITHM: {settings.ALGORITHM}")
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        print(f"Decoded payload: {payload}")
+        #print(f"Decoded payload: {payload}")
         
         token_type_claim = payload.get("type") or payload.get("typ")
         if token_type_claim != token_type:
@@ -86,9 +86,9 @@ def verify_token(token: str, token_type: str = "access") -> TokenData:
             raise credentials_exception
         
         user_id_str: str = payload.get("sub")
-        print(f"User ID string: {user_id_str}")
+        #print(f"User ID string: {user_id_str}")
         if user_id_str is None:
-            print("No sub claim in token")
+            #print("No sub claim in token")
             raise credentials_exception
 
         # Handle both string and integer conversion
@@ -103,9 +103,9 @@ def verify_token(token: str, token_type: str = "access") -> TokenData:
             role=payload.get("role"),
             permissions=payload.get("permissions", [])
         )
-        print(f"Token data: {token_data}")
+        #print(f"Token data: {token_data}")
         return token_data
         
     except JWTError as e:
-        print(f"JWT decode error: {e}")
+        #print(f"JWT decode error: {e}")
         raise credentials_exception

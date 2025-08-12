@@ -121,6 +121,7 @@ class ExternalServiceError(BaseAPIException):
             error_code="EXTERNAL_SERVICE_ERROR"
         )
         self.service_name = service_name
+
 class BankNotFoundError(NotFoundError):
     """Raised when a bank is not found."""
     
