@@ -1,20 +1,18 @@
 """
 Bank-related Pydantic schemas for request/response validation.
 
-This module contains all the Pydantic models used for bank-related API endpoints,
-including request validation, response serialization, and documentation.
+This module contains Pydantic models for bank-related API endpoints,
+refactored to follow the DRY principle using inheritance.
 """
 from typing import Optional
 from datetime import datetime, timezone
 from pydantic import BaseModel, Field, field_validator
-from app.core.validators import bank_name_validator,url_validator
+from app.core.validators import bank_name_validator, url_validator
+
 
 class BankBase(BaseModel):
     """
-    Base bank schema with common fields.
-
-    This schema contains the core fields that are shared across
-    different bank-related operations.
+    Base bank schema with common fields and validation logic.
     """
     bank_name: str = Field(
         ...,
@@ -29,13 +27,15 @@ class BankBase(BaseModel):
         example="https://example.com/logo.png",
         description="URL to the bank's logo image"
     )
+    
     description: Optional[str] = Field(
         None,
         max_length=1000,
         example="A leading financial institution providing comprehensive banking services",
         description="Brief description of the bank"
     )
-
+    
+    # Validators are defined here and are inherited by all child schemas.
     @field_validator('bank_name')
     @classmethod
     def validate_bank_name(cls, v: str) -> str:
@@ -50,22 +50,12 @@ class BankBase(BaseModel):
             return url_validator(cls, v)
         return v
 
-
 class BankCreate(BankBase):
     """
     Schema for creating a new bank.
-
-    Inherits all fields from BankBase and makes bank_name required.
     Used for POST /banks/ endpoint.
     """
-    
-    bank_name: str = Field(
-        ...,
-        min_length=2,
-        max_length=255,
-        example="First National Bank",
-        description="Name of the bank to create"
-    )
+    created_by_user_id: int = Field(...)
 
     class Config:
         """Pydantic configuration."""
@@ -73,43 +63,24 @@ class BankCreate(BankBase):
             "example": {
                 "bank_name": "First National Bank",
                 "logo": "https://example.com/fnb-logo.png",
-                "description": "A trusted financial partner since 1950"
+                "description": "A trusted financial partner since 1950",
+                "created_by_user_id": 1
             }
         }
-
 
 class BankUpdate(BaseModel):
     """
     Schema for updating an existing bank.
-
     All fields are optional to support partial updates.
     Used for PUT /banks/{bank_id} endpoint.
     """
-    
-    bank_name: Optional[str] = Field(
-        None,
-        min_length=2,
-        max_length=255,
-        example="Updated Bank Name",
-        description="New name for the bank"
-    )
-    logo: Optional[str] = Field(
-        None,
-        max_length=500,
-        example="https://example.com/new-logo.png",
-        description="New logo URL for the bank"
-    )
-    description: Optional[str] = Field(
-        None,
-        max_length=1000,
-        example="Updated bank description",
-        description="New description for the bank"
-    )
+    bank_name: Optional[str] = Field(None, min_length=2, max_length=255, example="Updated Bank Name")
+    logo: Optional[str] = Field(None, max_length=500, example="https://example.com/new-logo.png")
+    description: Optional[str] = Field(None, max_length=1000, example="Updated bank description")
 
     @field_validator('bank_name')
     @classmethod
     def validate_bank_name(cls, v: Optional[str]) -> Optional[str]:
-        """Validate bank name format and content."""
         if v:
             return bank_name_validator(cls, v)
         return v
@@ -117,7 +88,6 @@ class BankUpdate(BaseModel):
     @field_validator('logo')
     @classmethod
     def validate_logo_url(cls, v: Optional[str]) -> Optional[str]:
-        """Validate logo URL format."""
         if v:
             return url_validator(cls, v)
         return v
@@ -146,50 +116,31 @@ class BankDeletionResponse(BaseModel):
         description="Response timestamp"
     )
 
-
 class BankResponse(BankBase):
-    bank_id: int 
-    created_by_user_id: Optional[int]
-    created_at: datetime
-    updated_at: datetime
+    """
+    Schema for a full bank response from the database.
+    
+    Inherits all fields and adds auto-generated fields from the database model.
+    """
+    bank_id: int = Field(..., description="Unique identifier for the bank")
+    created_by_user_id: Optional[int] = Field(None)
+    created_at: datetime = Field(...)
+    updated_at: datetime = Field(...)
 
     model_config = {
-        "from_attributes": True,
-        "extra": "forbid"
+        "from_attributes": True
     }
-
-
+    
 
 class BankSummary(BaseModel):
     """
     Schema for bank summary information.
-
-    Lightweight version of bank data for list views and references.
+    A lightweight version of bank data for list views and references.
     """
-    bank_id: int = Field(
-        ...,
-        example=1,
-        description="Unique identifier for the bank"
-    )
-    bank_name: str = Field(
-        ...,
-        example="ABC Bank",
-        description="Name of the bank"
-    )
-    logo: Optional[str] = Field(
-        None,
-        example="https://example.com/logo.png",
-        description="URL to the bank's logo"
-    )
+    bank_id: int = Field(..., example=1, description="Unique identifier for the bank")
+    bank_name: str = Field(..., example="ABC Bank", description="Name of the bank")
+    logo: Optional[str] = Field(None, example="https://example.com/logo.png", description="URL to the bank's logo")
     
     model_config = {
         "from_attributes": True
     }
-
-
-# Import UserSummary for forward reference
-from app.schemas.auth import UserWithRole
-
-# Forward references for circular imports
-BankResponse.model_rebuild()
-

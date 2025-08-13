@@ -77,8 +77,8 @@ class Bank(Base):
     )
 
     # Relationships
-    #customers = relationship("Customer", back_populates="bank", lazy="select")
-    created_by_user = relationship("User", back_populates="banks", lazy="select")
+    customers = relationship("Customer", back_populates="bank", lazy="select")
+    created_by_user = relationship("User", back_populates="banks_created")
 
     @validates('bank_name')
     def validate_bank_name(self, key: str, bank_name: str) -> str:

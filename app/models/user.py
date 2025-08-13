@@ -16,4 +16,5 @@ class User(Base):
 
     # Relationships
     role = relationship("Role", back_populates="users", lazy="joined")
-    banks = relationship("Bank", back_populates="created_by_user", lazy="select")
+    banks_created = relationship("Bank", back_populates="created_by_user", lazy="select")
+    customers_created = relationship("Customer", back_populates="created_by_user", lazy="select")

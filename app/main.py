@@ -6,6 +6,7 @@ from .api.v1 import auth
 from .api.v1 import users as users_router
 from .api.v1 import roles as roles_router
 from .api.v1 import bank  as banks_router
+from .api.v1 import customers as customer_router
 #from .api.v1 import rbac_test as rbac_test_router
 from .core.config import settings
 
@@ -135,4 +136,5 @@ app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(users_router.router, prefix="/api/v1", tags=["users"])
 app.include_router(roles_router.router, prefix="/api/v1", tags=["roles"])
 app.include_router(banks_router.router, prefix="/api/v1", tags=["banks"])
+app.include_router(customer_router.router, prefix="/api/v1", tags=["customers"])
 #app.include_router(rbac_test_router.router, prefix="/api/v1", tags=["rbac-testing"])

@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 from datetime import datetime, timezone
 
 
-T = TypeVar("T")
+T = TypeVar("T",bound=BaseModel)
 
 
 class ErrorResponse(BaseModel):
@@ -87,6 +87,16 @@ class MessageResponse(BaseModel):
             }
         }
 
+class SuccessResponse(BaseModel, Generic[T]):
+    """
+    A generic schema for all successful API responses.
+    """
+    message: str = Field(
+        ...,
+        example="Operation completed successfully",
+        description="A human-readable success message."
+    )
+    data: T
 
 class ListResponse(BaseModel, Generic[T]):
     """
