@@ -6,8 +6,9 @@ from sqlalchemy.exc import IntegrityError
 from app.database import get_db
 from app.models.banks import Bank
 from app.models.user import User
+from app.models.customers import Customer 
 from app.schemas.bank import BankCreate, BankUpdate, BankResponse,BankDeletionResponse
-from app.schemas.common import ErrorResponse, ListResponse
+from app.schemas.common import ErrorResponse, ListResponse,SuccessResponse
 from app.core.dependencies import require_permissions, get_current_user
 
 common_responses = {
@@ -18,7 +19,7 @@ common_responses = {
 
 router = APIRouter(prefix="/banks", tags=["banks"],responses=common_responses)
 
-@router.post("/", response_model=BankResponse, responses={
+@router.post("/", response_model=SuccessResponse[BankResponse], responses={
     409: {"model": ErrorResponse}
 })
 def create_bank(
@@ -27,16 +28,19 @@ def create_bank(
     current_user: User = Depends(require_permissions(["banks:write"]))
 ):
     
-    bank = Bank(
+    new_bank = Bank(
         **payload.model_dump(),
         created_by_user_id=current_user.id
     )
     
     try:
-        db.add(bank)
+        db.add(new_bank)
         db.commit()
-        db.refresh(bank)
-        return bank
+        db.refresh(new_bank)
+        return {
+            "message": "Bank created successfully",
+            "data": new_bank
+        }
     except IntegrityError:
         db.rollback()  # Rollback in case of a failed commit
         raise HTTPException(
@@ -77,7 +81,7 @@ def get_bank(
     return bank
 
 
-@router.put("/{bank_id}", response_model=BankResponse)
+@router.put("/{bank_id}", response_model=SuccessResponse[BankResponse])
 def update_bank(
     bank_id: int,
     payload: BankUpdate,
@@ -97,28 +101,43 @@ def update_bank(
     
     db.commit()
     db.refresh(bank)
-    return bank
+    return SuccessResponse(
+        message=f"Bank with ID {bank_id} updated successfully",
+        data = BankResponse.model_validate(bank)
+    )
 
 
-@router.delete("/{bank_id}", response_model=BankDeletionResponse)
+@router.delete("/{bank_id}", response_model=BankDeletionResponse, responses={
+    404: {"model": ErrorResponse, "description": "Bank not found"},
+    409: {"model": ErrorResponse, "description": "Conflict: Bank cannot be deleted as it has associated customers."}
+})
 def delete_bank(
     bank_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permissions(["banks:delete"]))
 ):
+    # Check if the bank exists
     bank = db.query(Bank).filter(Bank.bank_id == bank_id).first()
     if not bank:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Bank not found")
 
-    # Store the details before deleting the object
+    # Check for any associated customers
+    has_customers = db.query(Customer).filter(Customer.bank_id == bank.bank_id).first()
+    if has_customers:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Bank cannot be deleted because it has associated customers."
+        )
+
+    # Store details before deletion
     response_data = {
         "bank_id": bank.bank_id,
         "bank_name": bank.bank_name,
         "created_by_user_id": bank.created_by_user_id
     }
 
+    # If no customers exist, proceed with deletion
     db.delete(bank)
     db.commit()
 
     return BankDeletionResponse(**response_data)
-

@@ -1,140 +1,82 @@
-from fastapi import FastAPI
+from contextlib import asynccontextmanager
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.openapi.utils import get_openapi
-from . import models, database
-from .api.v1 import auth
-from .api.v1 import users as users_router
-from .api.v1 import roles as roles_router
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
+
+from .core.config import settings
+from .core.security_checks import validate_production_security, print_security_recommendations
+from .database import Base, engine
+from .middleware import SecurityHeadersMiddleware, InputValidationMiddleware, RequestSizeMiddleware, SecurityHeadersValidationMiddleware
+from .models import User, Role, Permission, TokenBlacklist, AuditLog  # noqa: F401 (ensure models are imported so tables are created)
+from .api.v1.auth import router as auth_router
+from .api.v1.users import router as users_router
+from .api.v1.roles import router as roles_router
+from .api.v1.role_hierarchy import router as role_hierarchy_router
+from .api.v1.audit import router as audit_router
 from .api.v1 import bank  as banks_router
 from .api.v1 import customers as customer_router
-#from .api.v1 import rbac_test as rbac_test_router
-from .core.config import settings
+
+
+# Initialize rate limiter
+limiter = Limiter(key_func=get_remote_address)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: Create tables (for demo; in prod use Alembic migrations)
+    Base.metadata.create_all(bind=engine)
+
+    # Run security validation checks
+    validate_production_security()
+    print_security_recommendations()
+
+    yield
+    # Shutdown: cleanup if needed
+    pass
 
 app = FastAPI(
-    title="FastAPI RBAC Demo",
-    description="""
-    ## FastAPI Role-Based Access Control (RBAC) System
-    
-    This is a comprehensive demonstration of implementing RBAC in FastAPI with:
-    
-    * **JWT Authentication** - Secure token-based authentication
-    * **Role-Based Access Control** - Fine-grained permission management
-    * **User Management** - Complete CRUD operations with RBAC protection
-    * **Role Management** - Dynamic role and permission assignment
-    
-    ## Getting Started
-    
-    1. **Seed the database**: `python -m app.seeds.seed`
-    2. **Get authentication help**: Visit `/api/v1/auth/help`
-    3. **Login**: Use POST `/api/v1/auth/login` with default credentials
-    4. **Authorize**: Click the 'Authorize' button and enter your Bearer token
-    
-    ## Default Users
-    
-    * **Admin**: `admin` / `password123` (all permissions)
-    * **User**: `user` / `password123` (limited permissions)
-    
-    ## API Documentation
-    
-    * **Auth**: Authentication and user management
-    * **Users**: User CRUD operations with RBAC protection
-    * **Roles**: Role and permission management
-    * **RBAC Testing**: Comprehensive RBAC validation endpoints
-    """,
+    title="FastAPI RBAC System 🔐",
     version="1.0.0",
-    contact={
-        "name": "FastAPI RBAC Demo",
-        "url": "https://github.com/your-repo/fastapi-rbac-demo",
-    },
-    license_info={
-        "name": "MIT",
-        "url": "https://opensource.org/licenses/MIT",
-    },
-    openapi_tags=[
-        {
-            "name": "auth",
-            "description": "Authentication operations. Login, register, and token management.",
-            "externalDocs": {
-                "description": "Authentication Help",
-                "url": "/api/v1/auth/help",
-            },
-        },
-        {
-            "name": "users",
-            "description": "User management operations. CRUD operations for users with RBAC protection.",
-        },
-        {
-            "name": "roles",
-            "description": "Role management operations. CRUD operations for roles and permissions.",
-        },
-        {
-            "name": "rbac-testing",
-            "description": "RBAC testing and validation endpoints for debugging and testing permissions.",
-        }
-    ]
+    description="A comprehensive FastAPI application with Role-Based Access Control (RBAC) authentication system",
+    lifespan=lifespan
 )
 
-# CORS middleware configuration
+# Add Security Headers middleware (first)
+app.add_middleware(SecurityHeadersMiddleware)
+
+# Add Input Validation middleware
+app.add_middleware(InputValidationMiddleware, enable_strict_validation=True)
+
+# Add Request Size middleware
+app.add_middleware(RequestSizeMiddleware, max_request_size=10 * 1024 * 1024)  # 10MB
+
+# Add Security Headers Validation middleware
+app.add_middleware(SecurityHeadersValidationMiddleware)
+
+# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.ALLOW_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_credentials=settings.ALLOW_CREDENTIALS,
+    allow_methods=settings.ALLOW_METHODS,
+    allow_headers=settings.ALLOW_HEADERS,
 )
 
-# Create tables at startup
-@app.on_event("startup")
-def startup():
-    if settings.CREATE_ALL_ON_STARTUP:
-        models.Base.metadata.create_all(bind=database.engine)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# Custom OpenAPI schema to include security schemes
-def custom_openapi():
-    if app.openapi_schema:
-        return app.openapi_schema
-    
-    openapi_schema = get_openapi(
-        title=app.title,
-        version=app.version,
-        description=app.description,
-        routes=app.routes,
-    )
-    
-    # Add security schemes
-    openapi_schema["components"]["securitySchemes"] = {
-        "BearerAuth": {
-            "type": "http",
-            "scheme": "bearer",
-            "bearerFormat": "JWT",
-            "description": "Enter your JWT token in the format: Bearer <token>"
-        }
-    }
-    
-    # Add global security requirement
-    openapi_schema["security"] = [
-        {
-            "BearerAuth": []
-        }
-    ]
-    
-    # Add server information
-    openapi_schema["servers"] = [
-        {
-            "url": "http://localhost:8000",
-            "description": "Development server"
-        }
-    ]
-    
-    app.openapi_schema = openapi_schema
-    return app.openapi_schema
-
-app.openapi = custom_openapi
-
-# Include routers
-app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
-app.include_router(users_router.router, prefix="/api/v1", tags=["users"])
-app.include_router(roles_router.router, prefix="/api/v1", tags=["roles"])
+app.include_router(auth_router, prefix="/api/v1", tags=["authentication"])
+app.include_router(users_router, prefix="/api/v1", tags=["users"])
+app.include_router(roles_router, prefix="/api/v1", tags=["roles"])
+app.include_router(role_hierarchy_router, prefix="/api/v1", tags=["role-hierarchy"])
+app.include_router(audit_router, prefix="/api/v1", tags=["audit"])
 app.include_router(banks_router.router, prefix="/api/v1", tags=["banks"])
 app.include_router(customer_router.router, prefix="/api/v1", tags=["customers"])
-#app.include_router(rbac_test_router.router, prefix="/api/v1", tags=["rbac-testing"])
+
+
+
+
+@app.get("/", tags=["health"])
+def health():
+    return {"status": "ok"}

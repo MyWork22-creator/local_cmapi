@@ -9,6 +9,7 @@ from sqlalchemy.exc import IntegrityError, DBAPIError
 from app.database import get_db
 from app.models.customers import Customer
 from app.models.user import User
+from app.models.banks import Bank
 from app.schemas.customer import CustomerCreate, CustomerUpdate, CustomerResponse,CustomerDeletionResponse
 from app.schemas.common import ErrorResponse, ListResponse,SuccessResponse
 from app.core.dependencies import get_current_user, require_permissions
@@ -39,7 +40,13 @@ def create_customer(
             detail=f"Customer with ID '{payload.customer_id}' already exists."
         )
 
-    # 2. If no duplicate is found, proceed with the insert
+    # 2. Check if the bank exists. Use `payload.bank_id` directly here.
+    bank = db.query(Bank).filter(Bank.bank_id == payload.bank_id).first()
+    if not bank:
+        raise HTTPException(status_code=404, detail=f"Bank with id {payload.bank_id} not found")
+    
+    # 3. If no duplicate is found and bank exists, proceed with the insert
+    # Now you can create the dictionary if you need it later.
     customer_data = payload.model_dump()
     new_customer = Customer(
         **customer_data,
@@ -140,7 +147,7 @@ def update_customer(
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Update failed due to a unique constraint violation."
+            detail=f"Bank with id {payload.bank_id} not found"
         )
 @router.delete("/{id}", response_model=CustomerDeletionResponse, responses={
     404: {"model": ErrorResponse, "description": "Not Found: Customer not found"}

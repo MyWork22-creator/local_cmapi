@@ -1,6 +1,7 @@
 """
 FastAPI dependencies for authentication and authorization.
 """
+import jwt
 from typing import Optional, List
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -11,7 +12,7 @@ from app.models.user import User
 from app.models.role import Role
 from app.models.permission import Permission
 from app.core.security import verify_token, TokenData
-
+from app.core.config import settings
 
 # HTTP Bearer token scheme
 security = HTTPBearer()
@@ -21,22 +22,31 @@ async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db: Session = Depends(get_db)
 ) -> User:
-    """
-    Get the current authenticated user from JWT token.
-    
-    Args:
-        credentials: HTTP Bearer credentials
-        db: Database session
+    try:
+        # CORRECTED: Use credentials.credentials to access the token string
+        payload = jwt.decode(
+            credentials.credentials,  # Changed from credentials.token
+            settings.SECRET_KEY,
+            algorithms=[settings.ALGORITHM]
+        )
         
-    Returns:
-        Current user object
+        user_id: int = payload.get("sub") 
         
-    Raises:
-        HTTPException: If user is not found or inactive
-    """
-    token_data = verify_token(credentials.credentials)
+        if user_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token payload: 'sub' claim missing",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+    except jwt.PyJWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     
-    user = db.query(User).filter(User.id == token_data.user_id).first()
+    user = db.query(User).filter(User.id == user_id).first()
+    
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -52,8 +62,6 @@ async def get_current_user(
         )
     
     return user
-
-
 async def get_current_active_user(
     current_user: User = Depends(get_current_user)
 ) -> User:
@@ -197,23 +205,23 @@ async def get_optional_user(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
     db: Session = Depends(get_db)
 ) -> Optional[User]:
-    """
-    Get the current user if authenticated, otherwise return None.
-    Useful for endpoints that work with or without authentication.
-    
-    Args:
-        credentials: Optional HTTP Bearer credentials
-        db: Database session
-        
-    Returns:
-        Current user object or None
-    """
     if not credentials:
         return None
     
     try:
-        token_data = verify_token(credentials.credentials)
-        user = db.query(User).filter(User.id == token_data.user_id).first()
+        # CORRECTED: Pass credentials.credentials to verify_token
+        payload = verify_token(credentials.credentials) 
+        
+        if not payload:
+            return None
+        
+        # CORRECTED: Use .get('sub') to retrieve the user ID from the payload
+        user_id = payload.get('sub')
+        
+        if user_id is None:
+            return None
+        
+        user = db.query(User).filter(User.id == user_id).first()
         if user and user.status:
             return user
     except HTTPException:

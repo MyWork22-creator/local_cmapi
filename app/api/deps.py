@@ -1,13 +1,10 @@
-from typing import List, Optional
+from typing import List
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError, jwt
 from sqlalchemy.orm import Session
-from app.core.security import oauth2_scheme
-from app.core.config import settings
+from app.core.security import oauth2_scheme, verify_token_with_blacklist
 from app.database import SessionLocal
 from app.models.user import User
-from app.schemas.auth import TokenData
+
 
 def get_db():
     db = SessionLocal()
@@ -26,30 +23,29 @@ async def get_current_user(
         headers={"WWW-Authenticate": "Bearer"},
     )
     
-    try:
-        decode_kwargs = {
-            "key": settings.SECRET_KEY,
-            "algorithms": [settings.ALGORITHM],
-            "issuer": settings.JWT_ISSUER,
-        }
-        if settings.JWT_AUDIENCE:
-            decode_kwargs["audience"] = settings.JWT_AUDIENCE
-        payload = jwt.decode(token, **decode_kwargs)
-        username: str = payload.get("sub")
-        token_type: str = payload.get("typ")
-        if username is None:
-            raise credentials_exception
-        if token_type != "access":
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token type",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
-        token_data = TokenData(username=username)
-    except JWTError:
+    # Verify token with blacklist checking
+    payload = verify_token_with_blacklist(token, db)
+    if not payload:
         raise credentials_exception
-        
-    user = db.query(User).filter(User.user_name == token_data.username).first()
+
+    user_id_str: str = payload.get("sub")
+    token_type: str = payload.get("typ")
+    if user_id_str is None:
+        raise credentials_exception
+    if token_type != "access":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token type",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # Convert user_id from string to int
+    try:
+        user_id = int(user_id_str)
+    except ValueError:
+        raise credentials_exception
+
+    user = db.query(User).filter(User.id == user_id).first()
     if user is None:
         raise credentials_exception
     if user.status != "active":
@@ -63,12 +59,15 @@ def check_permissions(required_permissions: List[str]):
     async def permission_checker(
         current_user: User = Depends(get_current_user)
     ) -> bool:
-        user_permissions = {
-            permission.name 
-            for role in [current_user.role] 
-            for permission in role.permissions
-        }
-        
+        if not current_user.role:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="User has no role assigned"
+            )
+
+        # Get all permissions including inherited ones from role hierarchy
+        user_permissions = set(current_user.role.get_permission_names())
+
         if not all(perm in user_permissions for perm in required_permissions):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -102,12 +101,15 @@ def check_any_permission(required_permissions: List[str]):
     async def permission_checker(
         current_user: User = Depends(get_current_user)
     ) -> bool:
-        user_permissions = {
-            permission.name 
-            for role in [current_user.role] 
-            for permission in role.permissions
-        }
-        
+        if not current_user.role:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="User has no role assigned"
+            )
+
+        # Get all permissions including inherited ones from role hierarchy
+        user_permissions = set(current_user.role.get_permission_names())
+
         if not any(perm in user_permissions for perm in required_permissions):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,

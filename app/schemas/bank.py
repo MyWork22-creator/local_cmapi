@@ -55,7 +55,7 @@ class BankCreate(BankBase):
     Schema for creating a new bank.
     Used for POST /banks/ endpoint.
     """
-    created_by_user_id: int = Field(...)
+    #created_by_user_id: int = Field(...)
 
     class Config:
         """Pydantic configuration."""
@@ -64,7 +64,7 @@ class BankCreate(BankBase):
                 "bank_name": "First National Bank",
                 "logo": "https://example.com/fnb-logo.png",
                 "description": "A trusted financial partner since 1950",
-                "created_by_user_id": 1
+                
             }
         }
 
