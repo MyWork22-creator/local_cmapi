@@ -4,6 +4,7 @@ import uuid
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordBearer
+from sqlalchemy.orm import Session
 from app.core.config import settings
 
 # Password hashing
@@ -54,7 +55,8 @@ def create_access_token(subject: str, extra: Optional[Dict[str, Any]] = None) ->
         expires_in_minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES,
         extra=extra,
     )
-    return jwt.encode(claims, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    signing_key = settings.get_signing_key()
+    return jwt.encode(claims, signing_key, algorithm=settings.ALGORITHM)
 
 
 def create_refresh_token(subject: str) -> str:
@@ -63,4 +65,43 @@ def create_refresh_token(subject: str) -> str:
         token_type="refresh",
         expires_in_minutes=settings.REFRESH_TOKEN_EXPIRE_MINUTES,
     )
-    return jwt.encode(claims, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    signing_key = settings.get_signing_key()
+    return jwt.encode(claims, signing_key, algorithm=settings.ALGORITHM)
+
+
+def verify_token(token: str) -> Optional[Dict[str, Any]]:
+    """Verify and decode a JWT token (without blacklist checking)."""
+    try:
+        verification_key = settings.get_verification_key()
+        payload = jwt.decode(
+            token,
+            verification_key,
+            algorithms=[settings.ALGORITHM],
+            audience=(settings.JWT_AUDIENCE if settings.JWT_AUDIENCE else None),
+            issuer=settings.JWT_ISSUER,
+        )
+        return payload
+    except JWTError:
+        return None
+    except ValueError as e:
+        # Handle key configuration errors
+        print(f"JWT verification error: {e}")
+        return None
+
+
+def verify_token_with_blacklist(token: str, db: Session) -> Optional[Dict[str, Any]]:
+    """Verify and decode a JWT token with blacklist checking."""
+    # First verify the token structure and signature
+    payload = verify_token(token)
+    if not payload:
+        return None
+
+    # Check if token is blacklisted
+    jti = payload.get("jti")
+    if jti:
+        # Import here to avoid circular imports
+        from app.services.token_blacklist_service import TokenBlacklistService
+        if TokenBlacklistService.is_token_blacklisted(db, jti):
+            return None
+
+    return payload
