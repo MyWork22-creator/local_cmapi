@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Optional, List
 from pydantic import BaseModel, EmailStr, field_validator
 from datetime import datetime
@@ -106,6 +107,7 @@ class PermissionOut(BaseModel):
     description: Optional[str] = None
     created_at: datetime
     updated_at: datetime
+    permissions: List[PermissionOut] = []
 
     class Config:
         from_attributes = True

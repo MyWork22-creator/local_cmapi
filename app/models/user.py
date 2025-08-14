@@ -1,3 +1,4 @@
+
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -16,3 +17,5 @@ class User(Base):
 
     # Relationships
     role = relationship("Role", back_populates="users", lazy="joined")
+    banks_created = relationship('Bank', back_populates="created_by_user", lazy="select")
+    customers_created = relationship('Customer', back_populates="created_by_user", lazy="select")

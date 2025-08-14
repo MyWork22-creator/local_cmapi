@@ -1,3 +1,4 @@
+
 from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app.seeds.factories import (
@@ -17,11 +18,21 @@ def seed_data():
             [
                 "users:read",
                 "users:write",
+                "users:update",
                 "users:delete",
                 "roles:read",
                 "roles:write",
+                "roles:update",
                 "roles:delete",
-            ],
+                "banks:read",
+                "banks:write",
+                "banks:update",
+                "banks:delete",
+                "customers:read",
+                "customers:write",
+                "customers:update",
+                "customers:delete"
+],
         )
 
         # Assign permissions to roles (idempotent)

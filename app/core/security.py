@@ -6,25 +6,30 @@ from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from app.core.config import settings
+from pydantic import BaseModel
+from fastapi import HTTPException, status
+
+class TokenData(BaseModel):
+    """Token data model for JWT payload."""
+    user_id: int | None = None
+    username: Optional[str] = None
+    role: Optional[str] = None
+    permissions: Optional[list[str]] = None
 
 # Password hashing
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["argon2", "bcrypt"], deprecated="auto")
 
 # OAuth2 scheme (strict OAuth2 password flow uses form data)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
-
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
-
 
 def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
-
 def _now() -> datetime:
     return datetime.now(timezone.utc)
-
 
 def _build_claims(
     subject: str,
@@ -46,7 +51,6 @@ def _build_claims(
     if extra:
         payload.update(extra)
     return payload
-
 
 def create_access_token(subject: str, extra: Optional[Dict[str, Any]] = None) -> str:
     claims = _build_claims(

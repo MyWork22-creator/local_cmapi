@@ -2,12 +2,13 @@ import os
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
+import urllib.parse
 
 # Load environment variables from .env
 load_dotenv()
 
 DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
+DB_PASSWORD = urllib.parse.quote(os.getenv("DB_PASSWORD"))
 DB_HOST = os.getenv("DB_HOST")
 DB_PORT = os.getenv("DB_PORT")
 DB_NAME = os.getenv("DB_NAME")
@@ -24,6 +25,7 @@ else:
     )
     engine_kwargs = {"echo": True, "pool_pre_ping": True}
 
+print("Database URL : ",DATABASE_URL)
 # SQLAlchemy setup
 engine = create_engine(DATABASE_URL, **engine_kwargs)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
