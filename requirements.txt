@@ -4,7 +4,7 @@
 # - JWT authentication with token blacklisting
 # - Role-based access control with hierarchy
 # - Password policy validation
-# - Rate limiting and audit logging
+# - Rate limiting
 # - Input validation and security headers
 # - RSA key support for JWT algorithms
 #
@@ -24,7 +24,6 @@ Deprecated==1.2.18                  # Deprecation warnings
 dnspython==2.7.0                    # DNS resolution
 ecdsa==0.19.1                       # Elliptic curve cryptography
 email_validator==2.2.0              # Email validation
-Faker==37.5.3                       # Test data generation
 fastapi==0.111.0                    # Web framework
 fastapi-cli==0.0.8                  # FastAPI CLI tools
 greenlet==3.2.4

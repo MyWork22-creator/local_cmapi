@@ -87,9 +87,8 @@ def verify_token(token: str) -> Optional[Dict[str, Any]]:
         return payload
     except JWTError:
         return None
-    except ValueError as e:
+    except ValueError:
         # Handle key configuration errors
-        print(f"JWT verification error: {e}")
         return None
 
 

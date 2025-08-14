@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
 from app.models.role import Role
 from app.models.permission import Permission
-from app.services.audit_service import AuditService
+
 
 
 class RoleHierarchyService:
@@ -40,22 +40,7 @@ class RoleHierarchyService:
         db.add(role)
         db.commit()
         db.refresh(role)
-        
-        # Log the creation
-        AuditService.log_event(
-            db=db,
-            action="create_role",
-            user_id=admin_user_id,
-            resource="role",
-            resource_id=str(role.id),
-            details={
-                "role_name": name,
-                "parent_id": parent_id,
-                "level": level
-            },
-            status="success"
-        )
-        
+
         return role
     
     @staticmethod
@@ -91,22 +76,7 @@ class RoleHierarchyService:
         RoleHierarchyService._update_hierarchy_levels(db, role)
         
         db.commit()
-        
-        # Log the change
-        AuditService.log_event(
-            db=db,
-            action="update_role_hierarchy",
-            user_id=admin_user_id,
-            resource="role",
-            resource_id=str(role_id),
-            details={
-                "role_name": role.name,
-                "old_parent_id": old_parent_id,
-                "new_parent_id": parent_id
-            },
-            status="success"
-        )
-        
+
         return role
     
     @staticmethod
