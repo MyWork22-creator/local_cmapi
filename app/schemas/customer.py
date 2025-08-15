@@ -7,12 +7,13 @@ It uses a DRY approach by defining a base schema and inheriting from it.
 from typing import Optional
 from datetime import datetime, timezone
 from decimal import Decimal
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
+from app.schemas.bank import BankSummary
 
 # Base schema with all fields common to both creation and response
 # This prevents code duplication.
 class CustomerBase(BaseModel):
-    customer_id: str = Field(..., max_length=20)
+    #customer_id: str = Field(..., max_length=20)
     type: str = Field(..., max_length=20)
     currency: str = Field(..., max_length=3)
     credit: Decimal = Field(
@@ -30,16 +31,9 @@ class CustomerBase(BaseModel):
         description="Amount (non-negative, max 9,999,999,999,999.99)"
     )
     bank_id: int = Field(...)
-    #bank_name: str = Field(..., max_length=255)
     note: Optional[str] = Field(None, max_length=255)
     
-    # A validator to ensure bank_name isn't just an empty string
-    #@field_validator('bank_name')
-    #@classmethod
-    #def bank_name_not_empty(cls, v):
-    #    if not v.strip():
-    #        raise ValueError('Bank name cannot be empty')
-    #    return v
+    
     
 
 class CustomerCreate(CustomerBase):
@@ -77,12 +71,18 @@ class CustomerDeletionResponse(BaseModel):
         description="Response timestamp"
     )
 
-class CustomerResponse(CustomerBase):
-    id: int = Field(...)
-    create_at: datetime = Field(...)
-    update_at: datetime = Field(...)
-    create_by_user: int = Field(...)
+class CustomerResponse(BaseModel):
+    id: int
+    customer_id: str
+    type: str
+    currency: str
+    credit: Decimal
+    amount: Decimal
+    note: Optional[str]
+    bank: BankSummary
+    create_at: datetime
+    update_at: datetime
+    create_by_user: int
 
     class Config:
         from_attributes = True
-

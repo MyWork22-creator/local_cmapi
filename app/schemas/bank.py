@@ -127,20 +127,13 @@ class BankResponse(BankBase):
     created_at: datetime = Field(...)
     updated_at: datetime = Field(...)
 
-    model_config = {
-        "from_attributes": True
-    }
+    class Config:
+        from_attributes = True
     
 
 class BankSummary(BaseModel):
-    """
-    Schema for bank summary information.
-    A lightweight version of bank data for list views and references.
-    """
-    bank_id: int = Field(..., example=1, description="Unique identifier for the bank")
-    bank_name: str = Field(..., example="ABC Bank", description="Name of the bank")
-    logo: Optional[str] = Field(None, example="https://example.com/logo.png", description="URL to the bank's logo")
-    
-    model_config = {
-        "from_attributes": True
-    }
+    bank_id: int
+    bank_name: str
+
+    class Config:
+        from_attributes = True

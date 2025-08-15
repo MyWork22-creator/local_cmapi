@@ -32,30 +32,27 @@ def create_customer(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permissions(["customers:write"]))
 ):
-    # 1. Check for a duplicate customer_id before starting the insert
-    existing = db.query(Customer).filter(Customer.customer_id == payload.customer_id).first()
-    if existing:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=f"Customer with ID '{payload.customer_id}' already exists."
-        )
-
-    # 2. Check if the bank exists. Use `payload.bank_id` directly here.
+    # Check if the bank exists
     bank = db.query(Bank).filter(Bank.bank_id == payload.bank_id).first()
     if not bank:
         raise HTTPException(status_code=404, detail=f"Bank with id {payload.bank_id} not found")
     
-    # 3. If no duplicate is found and bank exists, proceed with the insert
-    # Now you can create the dictionary if you need it later.
-    customer_data = payload.model_dump()
+    # Generate a unique customer_id on the backend
+    total_count = db.query(Customer).count()
+    next_id_number = total_count + 1
+    generated_customer_id = f"CUST-{str(next_id_number).zfill(3)}"
+
+    # Create the new customer instance with the generated ID
     new_customer = Customer(
-        **customer_data,
+        customer_id=generated_customer_id, # Use the generated ID
+        **payload.model_dump(),
         create_by_user=current_user.id,
     )
     
     db.add(new_customer)
     db.commit()
     db.refresh(new_customer)
+    
     return {
         "message": "Customer created successfully",
         "data": new_customer
@@ -78,7 +75,9 @@ def list_customers(
     
     items = (
         db.query(Customer)
-        .options(joinedload(Customer.created_by_user))
+        .options(joinedload(Customer.created_by_user),
+                 joinedload(Customer.bank,innerjoin=False)
+        )
         .order_by(Customer.id.desc())
         .limit(limit)
         .offset(offset)

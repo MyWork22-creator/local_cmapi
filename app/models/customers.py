@@ -29,8 +29,12 @@ class Customer(Base):
     )
     create_by_user = Column(Integer,ForeignKey("users.id", ondelete="CASCADE"),nullable=False)
     
-    bank = relationship("Bank", back_populates="customers")
+    bank = relationship("Bank", back_populates="customers",foreign_keys=[bank_id])
     created_by_user = relationship("User", back_populates="customers_created")
+    
+    @property
+    def bank_name(self):
+        return self.bank.bank_name if self.bank else None
         
     
     
