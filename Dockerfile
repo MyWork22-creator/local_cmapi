@@ -5,15 +5,6 @@ FROM python:3.9-slim
 # Set the working directory in the container to a standard path
 WORKDIR /app
 
-# Install system dependencies needed to build some Python packages
-# This is crucial for packages like 'mysqlclient'
-RUN apt-get update && apt-get install -y \
-    default-libmysqlclient-dev \
-    gcc \
-    python3-dev \
-    libpq-dev \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
 
 # Copy the requirements file into the container
 COPY requirements.txt ./
