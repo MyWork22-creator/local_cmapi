@@ -25,7 +25,7 @@ services:
     
   mysql:
     image: 'mysql:8.0.42'
-    container_name: athena-mysql
+    container_name: crm-mysql
     restart: unless-stopped
     ports:
     - '3307:3306'
