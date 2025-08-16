@@ -1,6 +1,4 @@
-# Stage 1: Build the application with dependencies
-# Use a minimal Python image as the base
-FROM python:3.9-slim
+FROM python:3-alpine
 
 # Set the working directory in the container to a standard path
 WORKDIR /app
