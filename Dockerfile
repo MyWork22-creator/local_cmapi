@@ -5,6 +5,14 @@ FROM python:3.9-slim
 # Set the working directory in the container to a standard path
 WORKDIR /app
 
+# Install all necessary system-level dependencies for common Python packages
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    default-libmysqlclient-dev \
+    libffi-dev \
+    libssl-dev \
+    zlib1g-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy the requirements file into the container
 COPY requirements.txt ./
