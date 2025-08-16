@@ -13,7 +13,7 @@ from app.schemas.bank import BankSummary
 # Base schema with all fields common to both creation and response
 # This prevents code duplication.
 class CustomerBase(BaseModel):
-    #customer_id: str = Field(..., max_length=20)
+    customer_id: str = Field(..., max_length=20)
     type: str = Field(..., max_length=20)
     currency: str = Field(..., max_length=3)
     credit: Decimal = Field(
@@ -40,7 +40,7 @@ class CustomerCreate(CustomerBase):
     pass
     
 class CustomerUpdate(BaseModel):
-    #customer_id: Optional[str] = Field(None, max_length=20)
+    customer_id: Optional[str] = Field(None, max_length=20)
     type: Optional[str] = Field(None, max_length=20)
     currency: Optional[str] = Field(None, max_length=3)
     credit: Optional[Decimal] = Field(

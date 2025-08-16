@@ -37,14 +37,13 @@ def create_customer(
     if not bank:
         raise HTTPException(status_code=404, detail=f"Bank with id {payload.bank_id} not found")
     
-    # Generate a unique customer_id on the backend
-    total_count = db.query(Customer).count()
-    next_id_number = total_count + 1
-    generated_customer_id = f"CUST-{str(next_id_number).zfill(3)}"
+    # Check if the customer_id already exists
+    existing_customer = db.query(Customer).filter(Customer.customer_id == payload.customer_id).first()
+    if existing_customer:
+        raise HTTPException(status_code=409, detail=f"Customer with id {payload.customer_id} already exists")
 
-    # Create the new customer instance with the generated ID
+    # Create the new customer instance with the provided ID
     new_customer = Customer(
-        customer_id=generated_customer_id, # Use the generated ID
         **payload.model_dump(),
         create_by_user=current_user.id,
     )

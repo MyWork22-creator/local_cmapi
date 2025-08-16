@@ -228,7 +228,7 @@ auth_rate_limiter = AuthRateLimiter()
 def check_auth_rate_limit(
     request: Request,
     endpoint: str,
-    max_attempts: int = 5,
+    max_attempts: int = 10,
     window_minutes: int = 15,
     username: Optional[str] = None
 ) -> bool:
