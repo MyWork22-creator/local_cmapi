@@ -7,34 +7,40 @@ services:
       dockerfile: Dockerfile
     container_name: crm-app
     restart: unless-stopped
+    # Working directory corrected to match the Dockerfile
     working_dir: /app
     networks:
       - crm_network
     depends_on:
-      - mysql
+      # Use long-form syntax to wait for the health check to pass
+      mysql:
+        condition: service_healthy
     environment:
       DB_CONNECTION: 'mysql'
       DB_HOST: 'crm-mysql'
       DB_PORT: '3306'
+      # Environment variables for database credentials
       DB_DATABASE: '${DB_DATABASE}'
       DB_USERNAME: '${DB_USERNAME}'
       DB_PASSWORD: '${DB_PASSWORD}'
       DB_ROOT_PASSWORD: '${DB_ROOT_PASSWORD}'
     ports:
+      # Corrected port mapping to match the app's exposed port 8000
       - '8100:8000'
-    
+
   mysql:
     image: 'mysql:8.0.42'
     container_name: crm-mysql
     restart: unless-stopped
     ports:
-    - '3308:3306'
+      - '3307:3306'
     environment:
       MYSQL_DATABASE: '${DB_DATABASE}'
       MYSQL_USER: '${DB_USERNAME}'
       MYSQL_PASSWORD: '${DB_PASSWORD}'
       MYSQL_ROOT_PASSWORD: '${DB_ROOT_PASSWORD}'
     volumes:
+      # Using a named volume for persistent data
       - 'sail-mysql:/var/lib/mysql'
     networks:
       - crm_network
@@ -46,6 +52,7 @@ services:
 networks:
   crm_network:
     driver: bridge
+
 volumes:
   sail-mysql:
     driver: local
