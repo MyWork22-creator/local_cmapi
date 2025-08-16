@@ -1,28 +1,31 @@
-# Use an official Python runtime as a parent image
+# Stage 1: Build the application with dependencies
+# Use a minimal Python image as the base
 FROM python:3.9-slim
 
+# Set the working directory in the container to a standard path
+WORKDIR /app
 
-# Set the working directory in the container
-WORKDIR /var/www/html
-# Install system dependencies required by your Python packages
+# Install system dependencies needed to build some Python packages
+# This is crucial for packages like 'mysqlclient'
 RUN apt-get update && apt-get install -y \
     default-libmysqlclient-dev \
     gcc \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy the requirements file into the container
-# Install Python packages
+COPY requirements.txt ./
+
+# Install the Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY ./var/www/html
-# Set the correct permissions
-RUN chown -R www-data:www-data /var/www/html
+# Copy the entire application source code into the container
+# The '.' here refers to your project's root directory
+COPY . .
 
-# Change the owner of the application directory to www-data
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+# Expose the port that the FastAPI application will run on
+EXPOSE 8000
 
-# Expose the port the app runs on
-EXPOSE 8100
-
-# Command to run the application
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8100"]
+# Command to run the application using Uvicorn
+# 'main:app' assumes your main file is named main.py and the FastAPI instance is 'app'
+# This is the line that would need to be changed if your app is not in an 'app' directory
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

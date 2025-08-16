@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile
     container_name: crm-app
     restart: unless-stopped
-    working_dir: /var/www/html
+    working_dir: /app
     networks:
       - crm_network
     depends_on:
