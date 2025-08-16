@@ -1,9 +1,9 @@
-FROM python:3-alpine
+FROM python:3.11-slim
 
-# Set the working directory in the container to a standard path
+# Set working directory
 WORKDIR /app
 
-# Install all necessary system-level dependencies for common Python packages
+# Install system dependencies for MySQL client & Python builds
 RUN apt-get update && apt-get install -y \
     build-essential \
     default-libmysqlclient-dev \
@@ -12,20 +12,15 @@ RUN apt-get update && apt-get install -y \
     zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy the requirements file into the container
-COPY requirements.txt ./
-
-# Install the Python dependencies
+# Install Python dependencies
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the entire application source code into the container
-# The '.' here refers to your project's root directory
+# Copy project files
 COPY . .
 
-# Expose the port that the FastAPI application will run on
+# Expose FastAPI port
 EXPOSE 8000
 
-# Command to run the application using Uvicorn
-# 'main:app' assumes your main file is named main.py and the FastAPI instance is 'app'
-# This is the line that would need to be changed if your app is not in an 'app' directory
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run FastAPI with Uvicorn
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

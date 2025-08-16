@@ -21,7 +21,7 @@ services:
       DB_PASSWORD: '${DB_PASSWORD}'
       DB_ROOT_PASSWORD: '${DB_ROOT_PASSWORD}'
     ports:
-      - '8100:80'
+      - '8100:8000'
     
   mysql:
     image: 'mysql:8.0.42'
