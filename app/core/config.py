@@ -1,5 +1,4 @@
 import secrets
-import warnings
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import List, Optional
@@ -19,21 +18,7 @@ class Settings(BaseSettings):
     @field_validator('SECRET_KEY')
     @classmethod
     def validate_secret_key(cls, v: str) -> str:
-        """Validate and warn about weak secret keys."""
-        if v == "dev-secret-key-change-me":
-            warnings.warn(
-                "⚠️  WARNING: Using default SECRET_KEY! This is insecure for production. "
-                "Set a strong SECRET_KEY environment variable.",
-                UserWarning,
-                stacklevel=2
-            )
-        elif len(v) < 32:
-            warnings.warn(
-                f"⚠️  WARNING: SECRET_KEY is only {len(v)} characters. "
-                "For security, use at least 32 characters.",
-                UserWarning,
-                stacklevel=2
-            )
+        """Validate secret key."""
         return v
 
     @field_validator('ALGORITHM')

@@ -6,8 +6,7 @@ from .user import User
 from .role import Role
 from .permission import Permission
 from .token_blacklist import TokenBlacklist
-from .audit_log import AuditLog
 from .banks import Bank  # Added this line
 from .customers import Customer # Added this line
 
-__all__ = ["Base", "User", "Role", "Permission", "TokenBlacklist", "AuditLog", "associations", "Bank", "Customer"]
+__all__ = ["Base", "User", "Role", "Permission", "TokenBlacklist", "associations", "Bank", "Customer"]

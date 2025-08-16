@@ -7,16 +7,19 @@ The Role Hierarchy System provides a flexible and powerful way to manage roles a
 ## Key Features
 
 ### 🏗️ Hierarchical Structure
+
 - **Parent-Child Relationships**: Roles can have parent roles, creating a tree-like hierarchy
 - **Automatic Level Calculation**: System automatically calculates and maintains hierarchy levels
 - **Circular Reference Prevention**: Built-in protection against invalid hierarchy configurations
 
 ### 🔐 Permission Inheritance
+
 - **Automatic Inheritance**: Child roles automatically inherit all permissions from parent roles
 - **Additive Permissions**: Child roles can have additional permissions beyond inherited ones
 - **Efficient Permission Checking**: Fast permission validation using inherited permissions
 
 ### 🛡️ Security & Integrity
+
 - **Hierarchy Validation**: Built-in integrity checking and validation
 - **Audit Logging**: All hierarchy changes are logged for security tracking
 - **Safe Operations**: Prevents operations that would break hierarchy integrity
@@ -42,20 +45,20 @@ class Role(Base):
     # ... existing fields ...
     parent_id = Column(Integer, ForeignKey("roles.id"), nullable=True)
     level = Column(Integer, default=0, nullable=False)
-    
+
     # Hierarchy relationships
     parent = relationship("Role", remote_side=[id], back_populates="children")
     children = relationship("Role", back_populates="parent")
-    
+
     def get_all_permissions(self):
         """Get all permissions including inherited ones."""
-        
+
     def has_permission(self, permission_name: str) -> bool:
         """Check if role has permission (including inherited)."""
-        
+
     def get_ancestors(self):
         """Get all parent roles up the hierarchy."""
-        
+
     def get_descendants(self):
         """Get all child roles down the hierarchy."""
 ```
@@ -65,9 +68,11 @@ class Role(Base):
 ### Hierarchy Management
 
 #### `GET /api/v1/hierarchy/tree`
+
 Get the complete role hierarchy as a tree structure.
 
 **Response:**
+
 ```json
 [
   {
@@ -76,14 +81,24 @@ Get the complete role hierarchy as a tree structure.
     "description": "System administrator",
     "level": 0,
     "direct_permissions": ["users:write", "roles:write"],
-    "all_permissions": ["users:write", "roles:write", "users:read", "roles:read"],
+    "all_permissions": [
+      "users:write",
+      "roles:write",
+      "users:read",
+      "roles:read"
+    ],
     "children": [
       {
         "id": 2,
         "name": "manager",
         "level": 1,
         "direct_permissions": ["users:read"],
-        "all_permissions": ["users:read", "users:write", "roles:write", "roles:read"],
+        "all_permissions": [
+          "users:read",
+          "users:write",
+          "roles:write",
+          "roles:read"
+        ],
         "children": []
       }
     ]
@@ -92,9 +107,11 @@ Get the complete role hierarchy as a tree structure.
 ```
 
 #### `GET /api/v1/hierarchy/{role_id}`
+
 Get detailed role information with hierarchy context.
 
 **Response:**
+
 ```json
 {
   "id": 2,
@@ -104,29 +121,31 @@ Get detailed role information with hierarchy context.
   "parent_id": 1,
   "parent_name": "admin",
   "direct_permissions": [
-    {"id": 3, "name": "users:read", "description": "Read user data"}
+    { "id": 3, "name": "users:read", "description": "Read user data" }
   ],
   "inherited_permissions": [
-    {"id": 1, "name": "users:write", "description": "Write user data"},
-    {"id": 2, "name": "roles:write", "description": "Write role data"}
+    { "id": 1, "name": "users:write", "description": "Write user data" },
+    { "id": 2, "name": "roles:write", "description": "Write role data" }
   ],
   "all_permissions": [
-    {"id": 1, "name": "users:write", "description": "Write user data"},
-    {"id": 2, "name": "roles:write", "description": "Write role data"},
-    {"id": 3, "name": "users:read", "description": "Read user data"}
+    { "id": 1, "name": "users:write", "description": "Write user data" },
+    { "id": 2, "name": "roles:write", "description": "Write role data" },
+    { "id": 3, "name": "users:read", "description": "Read user data" }
   ],
   "hierarchy_path": [
-    {"id": 1, "name": "admin", "level": 0},
-    {"id": 2, "name": "manager", "level": 1}
+    { "id": 1, "name": "admin", "level": 0 },
+    { "id": 2, "name": "manager", "level": 1 }
   ],
   "children": []
 }
 ```
 
 #### `POST /api/v1/hierarchy`
+
 Create a new role with optional parent.
 
 **Request:**
+
 ```json
 {
   "name": "supervisor",
@@ -136,9 +155,11 @@ Create a new role with optional parent.
 ```
 
 #### `PUT /api/v1/hierarchy/{role_id}/parent`
+
 Change the parent of an existing role.
 
 **Request:**
+
 ```json
 {
   "parent_id": 1
@@ -148,9 +169,11 @@ Change the parent of an existing role.
 ### Permission Analysis
 
 #### `GET /api/v1/hierarchy/permission/{permission_name}`
+
 Find all roles that have a specific permission.
 
 **Response:**
+
 ```json
 [
   {
@@ -173,9 +196,11 @@ Find all roles that have a specific permission.
 ```
 
 #### `GET /api/v1/hierarchy/user/{user_id}/permissions`
+
 Get all effective permissions for a user.
 
 **Response:**
+
 ```json
 {
   "user_id": 123,
@@ -191,9 +216,11 @@ Get all effective permissions for a user.
 ### Validation & Maintenance
 
 #### `GET /api/v1/hierarchy/validate`
+
 Validate hierarchy integrity.
 
 **Response:**
+
 ```json
 {
   "is_valid": true,
@@ -204,9 +231,11 @@ Validate hierarchy integrity.
 ```
 
 #### `POST /api/v1/hierarchy/fix-levels`
+
 Fix incorrect hierarchy levels.
 
 **Response:**
+
 ```json
 {
   "message": "Fixed hierarchy levels for 2 roles",
@@ -267,11 +296,13 @@ user_role.is_descendant_of(admin_role)  # True
 ### Existing Database Migration
 
 1. **Run Migration Script:**
+
    ```bash
    python app/scripts/migrate_role_hierarchy.py
    ```
 
 2. **Create Sample Hierarchy (Optional):**
+
    ```bash
    python app/scripts/migrate_role_hierarchy.py --sample
    ```
@@ -299,8 +330,8 @@ user_role.is_descendant_of(admin_role)  # True
 ### Security Considerations
 
 1. **Regular Validation**: Periodically run hierarchy validation
-2. **Audit Changes**: Monitor hierarchy changes through audit logs
-3. **Test Permissions**: Verify permission inheritance works as expected
+2. **Monitor Changes**: Monitor hierarchy changes through application logs
+3. **Verify Permissions**: Verify permission inheritance works as expected
 
 ### Performance Optimization
 

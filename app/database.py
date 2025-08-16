@@ -24,7 +24,7 @@ else:
         f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
     )
     engine_kwargs = {"echo": True, "pool_pre_ping": True}
-print("Database URL : ",DATABASE_URL)
+
 # SQLAlchemy setup
 engine = create_engine(DATABASE_URL, **engine_kwargs)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

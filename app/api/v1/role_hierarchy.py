@@ -3,7 +3,7 @@ from typing import Any, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from app.api.deps import get_db, require_admin, get_current_user
-from app.services import RoleService, RoleHierarchyService, AuditService
+from app.services import RoleService, RoleHierarchyService
 from app.models.user import User
 from app.schemas.role_hierarchy import (
     RoleHierarchyCreate, RoleHierarchyUpdate, RoleWithHierarchy,
@@ -292,17 +292,7 @@ async def fix_hierarchy_levels(
     **Warning:** This operation modifies role data. Use with caution.
     """
     fixed_count = RoleHierarchyService.fix_hierarchy_levels(db)
-    
-    # Log the maintenance action
-    AuditService.log_event(
-        db=db,
-        action="fix_hierarchy_levels",
-        user_id=current_user.id,
-        resource="role_hierarchy",
-        details={"fixed_count": fixed_count},
-        status="success"
-    )
-    
+
     return {
         "message": f"Fixed hierarchy levels for {fixed_count} roles",
         "fixed_count": fixed_count

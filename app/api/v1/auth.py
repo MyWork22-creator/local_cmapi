@@ -9,7 +9,7 @@ from app.core.config import settings
 from app.core.password_policy import get_password_requirements, PasswordValidationError
 from app.core.rate_limiting import check_auth_rate_limit, record_auth_attempt
 from app.api.deps import get_db, get_current_user, check_permissions
-from app.services import AuthService, UserService, RoleService, AuditService
+from app.services import AuthService, UserService, RoleService
 from app.models.user import User
 from app.schemas.auth import Token, UserCreate, UserOut, UserLogin, PasswordChangeRequest
 
@@ -121,16 +121,6 @@ async def login(
         # Record failed attempt in rate limiter
         record_auth_attempt(request, "login", credentials.username, success=False)
 
-        # Log failed authentication attempt
-        AuditService.log_authentication_event(
-            db=db,
-            action="login",
-            username=credentials.username,
-            status="failure",
-            details={"reason": "invalid_credentials"},
-            request=request
-        )
-
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
@@ -140,17 +130,6 @@ async def login(
         # Record failed attempt for inactive user
         record_auth_attempt(request, "login", credentials.username, success=False)
 
-        # Log inactive user login attempt
-        AuditService.log_authentication_event(
-            db=db,
-            action="login",
-            username=credentials.username,
-            user_id=user.id,
-            status="failure",
-            details={"reason": "inactive_account", "user_status": user.status},
-            request=request
-        )
-
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User account is not active"
@@ -158,17 +137,6 @@ async def login(
 
     # Record successful login attempt in rate limiter
     record_auth_attempt(request, "login", credentials.username, success=True)
-
-    # Log successful authentication
-    AuditService.log_authentication_event(
-        db=db,
-        action="login",
-        username=credentials.username,
-        user_id=user.id,
-        status="success",
-        details={"user_role": user.role.name if user.role else None},
-        request=request
-    )
 
     tokens = AuthService.create_tokens(user)
     access_token = tokens["access_token"]
@@ -292,16 +260,7 @@ async def logout(
         samesite=settings.COOKIE_SAMESITE
     )
 
-    # Log successful logout
-    AuditService.log_authentication_event(
-        db=db,
-        action="logout",
-        username=current_user.user_name,
-        user_id=current_user.id,
-        status="success",
-        details={"token_blacklisted": blacklist_success},
-        request=request
-    )
+
 
     return {
         "message": "Successfully logged out",
@@ -379,31 +338,14 @@ async def change_password(
             # Record successful password change in rate limiter
             record_auth_attempt(request, "password_change", current_user.user_name, success=True)
 
-            # Log successful password change
-            AuditService.log_authentication_event(
-                db=db,
-                action="password_change",
-                username=current_user.user_name,
-                user_id=current_user.id,
-                status="success",
-                request=request
-            )
+
 
             return {"message": "Password changed successfully"}
         else:
             # Record failed attempt in rate limiter
             record_auth_attempt(request, "password_change", current_user.user_name, success=False)
 
-            # Log failed password change
-            AuditService.log_authentication_event(
-                db=db,
-                action="password_change",
-                username=current_user.user_name,
-                user_id=current_user.id,
-                status="failure",
-                details={"reason": "unknown_error"},
-                request=request
-            )
+
 
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -413,16 +355,7 @@ async def change_password(
         # Record failed attempt for validation errors in rate limiter
         record_auth_attempt(request, "password_change", current_user.user_name, success=False)
 
-        # Log failed password change due to validation
-        AuditService.log_authentication_event(
-            db=db,
-            action="password_change",
-            username=current_user.user_name,
-            user_id=current_user.id,
-            status="failure",
-            details={"reason": "validation_error", "error": str(e)},
-            request=request
-        )
+
 
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

@@ -1,7 +1,7 @@
 """
 FastAPI dependencies for authentication and authorization.
 """
-import jwt
+from jose import jwt
 from typing import Optional, List
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -38,7 +38,7 @@ async def get_current_user(
                 detail="Invalid token payload: 'sub' claim missing",
                 headers={"WWW-Authenticate": "Bearer"},
             )
-    except jwt.PyJWTError:
+    except jwt.JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials",

@@ -109,29 +109,6 @@ class Bank(Base):
         """Check if bank has a logo."""
         return self.logo is not None and self.logo.strip() != ""
 
-    #def get_active_customers(self) -> List["Customer"]:
-        """
-        Get list of active customers for this bank.
-
-        Returns:
-            List of active Customer objects
-        """
-        return [customer for customer in self.customers if hasattr(customer, 'status') and customer.status]
-
-    #def get_customer_by_id(self, customer_id: str) -> Optional["Customer"]:
-        """
-        Find a customer by their customer ID.
-
-        Args:
-            customer_id: Customer ID to search for
-
-        Returns:
-            Customer object if found, None otherwise
-        """
-        for customer in self.customers:
-            if customer.customer_id == customer_id:
-                return customer
-        return None
 
     def update_info(self, name: Optional[str] = None, logo: Optional[str] = None,
                    description: Optional[str] = None) -> None:
