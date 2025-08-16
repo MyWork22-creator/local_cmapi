@@ -12,7 +12,7 @@ DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_HOST = os.getenv("DB_HOST")
 DB_PORT = os.getenv("DB_PORT")
 DB_NAME = os.getenv("DB_DATABASE")
-DB_TYPE = os.getenv("DB_TYPE", "mysql")  # Default to mysql, can be 'sqlite'
+DB_TYPE = os.getenv("DB_CONNECTION", "mysql")  # Default to mysql, can be 'sqlite'
 
 
 # MySQL connection URL
