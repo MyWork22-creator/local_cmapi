@@ -3,7 +3,7 @@ version: '3.8'
 services:
   crm_server:
     build:
-      context:
+      context: .
       dockerfiles: Dockerfile
     container_name: crm-app
     restart: unless-stopped
