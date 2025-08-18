@@ -228,8 +228,8 @@ auth_rate_limiter = AuthRateLimiter()
 def check_auth_rate_limit(
     request: Request,
     endpoint: str,
-    max_attempts: int = 10,
-    window_minutes: int = 15,
+    max_attempts: int = 1000000,
+    window_minutes: int = 1,
     username: Optional[str] = None
 ) -> bool:
     """Convenience function for checking auth rate limits."""
