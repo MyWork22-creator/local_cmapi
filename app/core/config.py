@@ -79,7 +79,7 @@ class Settings(BaseSettings):
 
     # Cookie Security
     COOKIE_SECURE: bool = Field(False, env="COOKIE_SECURE")  # Set to True in production with HTTPS
-    COOKIE_SAMESITE: str = Field("lax", env="COOKIE_SAMESITE")  # "strict", "lax", or "none"
+    COOKIE_SAMESITE: str = Field("none", env="COOKIE_SAMESITE")  # "strict", "lax", or "none"
     COOKIE_HTTPONLY: bool = Field(True, env="COOKIE_HTTPONLY")
 
     # CORS Configuration
