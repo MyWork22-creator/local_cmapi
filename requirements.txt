@@ -73,7 +73,7 @@ uvicorn==0.30.0                     # ASGI server
 watchfiles==1.1.0                   # File watching for development
 websockets==15.0.1                  # WebSocket support
 wrapt==1.17.2                       # Decorator utilities
-
+Faker==37.5.3
 
 # Installation Instructions:
 # pip install -r requirements.txt
