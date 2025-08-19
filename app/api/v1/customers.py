@@ -22,9 +22,9 @@ common_responses = {
 }
 
 # Create the APIRouter and apply the common responses
-router = APIRouter(prefix="/customers", tags=["customers"], responses=common_responses)
+router = APIRouter( tags=["customers"], responses=common_responses)
 
-@router.post("/", response_model=SuccessResponse[CustomerResponse], status_code=status.HTTP_201_CREATED, responses={
+@router.post("/customers", response_model=SuccessResponse[CustomerResponse], status_code=status.HTTP_201_CREATED, responses={
     409: {"model": ErrorResponse, "description": "Conflict: Customer ID already exists"}
 })
 def create_customer(
@@ -58,7 +58,7 @@ def create_customer(
     }
 
 
-@router.get("/", response_model=ListResponse[CustomerResponse])
+@router.get("/customers", response_model=ListResponse[CustomerResponse])
 def list_customers(
     limit: int = 50,
     offset: int = 0,
@@ -86,7 +86,7 @@ def list_customers(
     return ListResponse[CustomerResponse](items=items, total=total_count, limit=limit, offset=offset)
 
 
-@router.get("/{id}", response_model=SuccessResponse[CustomerResponse], responses={
+@router.get("/customers/{id}", response_model=SuccessResponse[CustomerResponse], responses={
     404: {"model": ErrorResponse, "description": "Not Found: Customer not found"}
 })
 def get_customer(
@@ -111,7 +111,7 @@ def get_customer(
         data=customer
     )
 
-@router.put("/{id}", response_model=SuccessResponse[CustomerResponse], responses={
+@router.put("/customers/{id}", response_model=SuccessResponse[CustomerResponse], responses={
     404: {"model": ErrorResponse, "description": "Not Found: Customer not found"}
 })
 def update_customer(
@@ -147,7 +147,7 @@ def update_customer(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"Bank with id {payload.bank_id} not found"
         )
-@router.delete("/{id}", response_model=CustomerDeletionResponse, responses={
+@router.delete("/customers/{id}", response_model=CustomerDeletionResponse, responses={
     404: {"model": ErrorResponse, "description": "Not Found: Customer not found"}
 })
 def delete_customer(

@@ -17,9 +17,9 @@ common_responses = {
     404: {"model": ErrorResponse}
 }
 
-router = APIRouter(prefix="/banks", tags=["banks"],responses=common_responses)
+router = APIRouter(tags=["banks"],responses=common_responses)
 
-@router.post("/", response_model=SuccessResponse[BankResponse], responses={
+@router.post("/banks", response_model=SuccessResponse[BankResponse], responses={
     409: {"model": ErrorResponse}
 })
 def create_bank(
@@ -48,7 +48,7 @@ def create_bank(
             detail="Bank with this name already exists."
         )
 
-@router.get("/", response_model=ListResponse[BankResponse])
+@router.get("/banks", response_model=ListResponse[BankResponse])
 def list_banks(
     limit: int = 50,
     offset: int = 0,
@@ -69,7 +69,7 @@ def list_banks(
     
     return ListResponse[BankResponse](items=items, total=total_count, limit=limit, offset=offset)
 
-@router.get("/{bank_id}", response_model=BankResponse)
+@router.get("/banks/{bank_id}", response_model=BankResponse)
 def get_bank(
     bank_id: int,
     db: Session = Depends(get_db),
@@ -81,7 +81,7 @@ def get_bank(
     return bank
 
 
-@router.put("/{bank_id}", response_model=SuccessResponse[BankResponse])
+@router.put("/banks/{bank_id}", response_model=SuccessResponse[BankResponse])
 def update_bank(
     bank_id: int,
     payload: BankUpdate,
@@ -107,7 +107,7 @@ def update_bank(
     )
 
 
-@router.delete("/{bank_id}", response_model=BankDeletionResponse, responses={
+@router.delete("/banks/{bank_id}", response_model=BankDeletionResponse, responses={
     404: {"model": ErrorResponse, "description": "Bank not found"},
     409: {"model": ErrorResponse, "description": "Conflict: Bank cannot be deleted as it has associated customers."}
 })
