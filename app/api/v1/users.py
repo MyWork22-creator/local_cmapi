@@ -57,7 +57,7 @@ def get_user(
             }
         },
         400: {"description": "Invalid data (username taken, invalid status, role not found)"},
-        403: {"description": "Insufficient permissions (requires users:write)"},
+        403: {"description": "Insufficient permissions (requires users:create)"},
         404: {"description": "User not found"}
     }
 )
@@ -65,7 +65,7 @@ def update_user(
     user_id: int,
     user_update: UserUpdate,
     db: Session = Depends(get_db),
-    _: bool = Depends(check_permissions(["users:write"])),
+    _: bool = Depends(check_permissions(["users:update"])),
 ) -> UserOut:
     """
     Update user information.
@@ -78,7 +78,7 @@ def update_user(
     - **status**: User status ('active', 'inactive', or 'suspended')
     - **role_id**: ID of the role to assign to the user
 
-    **Permissions Required:** `users:write`
+    **Permissions Required:** `users:udate`
 
     **Example:**
     ```json
@@ -192,7 +192,7 @@ def delete_user(
             }
         },
         400: {"description": "Invalid status value"},
-        403: {"description": "Insufficient permissions (requires users:write)"},
+        403: {"description": "Insufficient permissions (requires users:update)"},
         404: {"description": "User not found"}
     }
 )
@@ -200,7 +200,7 @@ def update_user_status(
     user_id: int,
     status_update: UserStatusUpdate,
     db: Session = Depends(get_db),
-    _: bool = Depends(check_permissions(["users:write"])),
+    _: bool = Depends(check_permissions(["users:update"])),
 ):
     """
     Update only the status of a user account.
@@ -211,7 +211,7 @@ def update_user_status(
     **Request Body:**
     - **status**: New status ('active', 'inactive', or 'suspended')
 
-    **Permissions Required:** `users:write`
+    **Permissions Required:** `users:update`
 
     **Example:**
     ```json

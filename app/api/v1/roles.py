@@ -60,13 +60,13 @@ def get_role(
             }
         },
         400: {"description": "Role name already exists"},
-        403: {"description": "Insufficient permissions (requires roles:write)"}
+        403: {"description": "Insufficient permissions (requires roles:create)"}
     }
 )
 def create_role(
     role_data: RoleCreate,
     db: Session = Depends(get_db),
-    _: bool = Depends(check_permissions(["roles:write"])),
+    _: bool = Depends(check_permissions(["roles:create"])),
 ) -> RoleOut:
     """
     Create a new role.
@@ -75,7 +75,7 @@ def create_role(
     - **name**: Unique role name (required)
     - **description**: Optional role description
 
-    **Permissions Required:** `roles:write`
+    **Permissions Required:** `roles:create`
 
     **Example:**
     ```json
@@ -127,7 +127,7 @@ def create_role(
             }
         },
         400: {"description": "Role name already exists"},
-        403: {"description": "Insufficient permissions (requires roles:write)"},
+        403: {"description": "Insufficient permissions (requires roles:update)"},
         404: {"description": "Role not found"}
     }
 )
@@ -135,7 +135,7 @@ def update_role(
     role_id: int,
     role_data: RoleUpdate,
     db: Session = Depends(get_db),
-    _: bool = Depends(check_permissions(["roles:write"])),
+    _: bool = Depends(check_permissions(["roles:update"])),
 ) -> RoleOut:
     """
     Update an existing role.
@@ -147,7 +147,7 @@ def update_role(
     - **name**: New role name (must be unique)
     - **description**: New role description
 
-    **Permissions Required:** `roles:write`
+    **Permissions Required:** `roles:update`
 
     **Example:**
     ```json
@@ -231,7 +231,7 @@ def delete_role(
             }
         },
         400: {"description": "Invalid permission IDs"},
-        403: {"description": "Insufficient permissions (requires roles:write)"},
+        403: {"description": "Insufficient permissions (requires roles:create)"},
         404: {"description": "Role not found"}
     }
 )
@@ -239,7 +239,7 @@ def assign_permissions_to_role(
     role_id: int,
     permission_data: RolePermissionAssignment,
     db: Session = Depends(get_db),
-    _: bool = Depends(check_permissions(["roles:write"])),
+    _: bool = Depends(check_permissions(["roles:create"])),
 ):
     """
     Assign permissions to a role.
@@ -250,7 +250,7 @@ def assign_permissions_to_role(
     **Request Body:**
     - **permission_ids**: List of permission IDs to assign to the role
 
-    **Permissions Required:** `roles:write`
+    **Permissions Required:** `roles:create`
 
     **Example:**
     ```json
