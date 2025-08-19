@@ -25,7 +25,7 @@ router = APIRouter(tags=["banks"],responses=common_responses)
 def create_bank(
     payload: BankCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_permissions(["banks:write"]))
+    current_user: User = Depends(require_permissions(["banks:create"]))
 ):
     
     new_bank = Bank(

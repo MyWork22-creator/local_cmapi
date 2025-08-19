@@ -30,7 +30,7 @@ router = APIRouter( tags=["customers"], responses=common_responses)
 def create_customer(
     payload: CustomerCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_permissions(["customers:write"]))
+    current_user: User = Depends(require_permissions(["customers:create"]))
 ):
     # Check if the bank exists
     bank = db.query(Bank).filter(Bank.bank_id == payload.bank_id).first()
