@@ -150,7 +150,7 @@ async def login(
         secure=settings.COOKIE_SECURE,
         samesite=settings.COOKIE_SAMESITE,
         max_age=settings.REFRESH_TOKEN_EXPIRE_MINUTES * 60,
-        domain="localhost",
+        domain="http://192.168.10.200/",
         path="/",
     )
     return {"access_token": access_token, "token_type": "bearer"}
