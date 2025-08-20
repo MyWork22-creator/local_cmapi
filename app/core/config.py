@@ -83,7 +83,7 @@ class Settings(BaseSettings):
     COOKIE_HTTPONLY: bool = Field(True, env="COOKIE_HTTPONLY")
 
     # CORS Configuration
-    ALLOW_ORIGINS: List[str] = Field(["http://localhost:3000", "http://localhost:8080","http://localhost:5173"], env="ALLOW_ORIGINS")
+    ALLOW_ORIGINS: List[str] = Field(["http://localhost:3000", "http://localhost:8080","http://localhost:5173","http://192.168.10.200:5173"], env="ALLOW_ORIGINS")
     ALLOW_CREDENTIALS: bool = Field(True, env="ALLOW_CREDENTIALS")
     ALLOW_METHODS: List[str] = Field(["GET", "POST", "PUT", "DELETE", "OPTIONS"], env="ALLOW_METHODS")
     ALLOW_HEADERS: List[str] = Field(["*"], env="ALLOW_HEADERS")
