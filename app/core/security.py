@@ -16,8 +16,12 @@ class TokenData(BaseModel):
     role: Optional[str] = None
     permissions: Optional[list[str]] = None
 
-# Password hashing
-pwd_context = CryptContext(schemes=["argon2", "bcrypt"], deprecated="auto")
+# Password hashing (prefer bcrypt for performance/compatibility on Windows)
+pwd_context = CryptContext(
+    schemes=["bcrypt", "argon2"],
+    deprecated="auto",
+    bcrypt__rounds=12,
+)
 
 # OAuth2 scheme (strict OAuth2 password flow uses form data)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")

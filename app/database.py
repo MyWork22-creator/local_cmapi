@@ -1,27 +1,25 @@
-import os
-from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 import urllib.parse
-
-# Load environment variables from .env
-load_dotenv()
-
-DB_USER = os.getenv("DB_USERNAME")
-DB_PASSWORD = urllib.parse.quote_plus(os.getenv("DB_PASSWORD"))
-DB_HOST = os.getenv("DB_HOST")
-DB_PORT = os.getenv("DB_PORT")
-DB_NAME = os.getenv("DB_DATABASE")
-DB_TYPE = os.getenv("DB_CONNECTION", "mysql")  # Default to mysql, can be 'sqlite'
-
-
-# MySQL connection URL
-DATABASE_URL = (
-    f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-)
-engine_kwargs = {"echo": True, "pool_pre_ping": True}
+from .core.config import settings
 
 # SQLAlchemy setup
+engine_kwargs = {"echo": True, "pool_pre_ping": True}
+
+if settings.DB_TYPE == "sqlite":
+    DATABASE_URL = f"sqlite:///./{settings.DB_NAME}.db"
+    # connect_args is needed for SQLite
+    engine_kwargs["connect_args"] = {"check_same_thread": False}
+elif settings.DB_TYPE == "mysql":
+    # MySQL connection URL
+    DB_PASSWORD_ENCODED = urllib.parse.quote_plus(settings.DB_PASSWORD)
+    DATABASE_URL = (
+        f"mysql+pymysql://{settings.DB_USER}:{DB_PASSWORD_ENCODED}@"
+        f"{settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_NAME}"
+    )
+else:
+    raise ValueError(f"Unsupported DB_TYPE: {settings.DB_TYPE}")
+
 engine = create_engine(DATABASE_URL, **engine_kwargs)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

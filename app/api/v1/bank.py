@@ -9,7 +9,7 @@ from app.models.user import User
 from app.models.customers import Customer 
 from app.schemas.bank import BankCreate, BankUpdate, BankResponse,BankDeletionResponse
 from app.schemas.common import ErrorResponse, ListResponse,SuccessResponse
-from app.core.dependencies import require_permissions, get_current_user
+from app.api.deps import get_db, check_permissions, get_current_user
 
 common_responses = {
     401: {"model": ErrorResponse},
@@ -25,7 +25,7 @@ router = APIRouter(tags=["banks"],responses=common_responses)
 def create_bank(
     payload: BankCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_permissions(["banks:create"]))
+    current_user: User = Depends(check_permissions(["banks:create"]))
 ):
     
     new_bank = Bank(
@@ -53,7 +53,7 @@ def list_banks(
     limit: int = 50,
     offset: int = 0,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_permissions(["banks:read"]))
+    current_user: User = Depends(check_permissions(["banks:read"]))
 ):
     
     total_count = db.query(Bank).count()
@@ -73,7 +73,7 @@ def list_banks(
 def get_bank(
     bank_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_permissions(["banks:read"]))
+    current_user: User = Depends(check_permissions(["banks:read"]))
 ):
     bank = db.query(Bank).options(joinedload(Bank.created_by_user).joinedload(User.role)).filter(Bank.bank_id == bank_id).first()
     if not bank:
@@ -86,7 +86,7 @@ def update_bank(
     bank_id: int,
     payload: BankUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_permissions(["banks:update"]))
+    current_user: User = Depends(check_permissions(["banks:update"]))
 ):
     bank = db.query(Bank).filter(Bank.bank_id == bank_id).first()
     if not bank:
@@ -114,7 +114,7 @@ def update_bank(
 def delete_bank(
     bank_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_permissions(["banks:delete"]))
+    current_user: User = Depends(check_permissions(["banks:delete"]))
 ):
     # Check if the bank exists
     bank = db.query(Bank).filter(Bank.bank_id == bank_id).first()

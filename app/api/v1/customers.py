@@ -12,7 +12,7 @@ from app.models.user import User
 from app.models.banks import Bank
 from app.schemas.customer import CustomerCreate, CustomerUpdate, CustomerResponse,CustomerDeletionResponse
 from app.schemas.common import ErrorResponse, ListResponse,SuccessResponse
-from app.core.dependencies import get_current_user, require_permissions
+from app.api.deps import get_db, check_permissions, get_current_user
 
 # Define a shared responses dictionary for common HTTP errors
 common_responses = {
@@ -30,7 +30,7 @@ router = APIRouter( tags=["customers"], responses=common_responses)
 def create_customer(
     payload: CustomerCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_permissions(["customers:create"]))
+    current_user: User = Depends(check_permissions(["customers:create"]))
 ):
     # Check if the bank exists
     bank = db.query(Bank).filter(Bank.bank_id == payload.bank_id).first()
@@ -63,7 +63,7 @@ def list_customers(
     limit: int = 50,
     offset: int = 0,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_permissions(["customers:read"]))
+    current_user: User = Depends(check_permissions(["customers:read"]))
 ):
     """
     Retrieve a paginated list of all customers.
@@ -92,7 +92,7 @@ def list_customers(
 def get_customer(
     id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_permissions(["customers:read"]))
+    current_user: User = Depends(check_permissions(["customers:read"]))
 ):
     """
     Get a single customer by their unique integer ID.
@@ -118,7 +118,7 @@ def update_customer(
     id: int,
     payload: CustomerUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_permissions(["customers:update"]))
+    current_user: User = Depends(check_permissions(["customers:update"]))
 ):
     """
     Update an existing customer's information.
@@ -153,7 +153,7 @@ def update_customer(
 def delete_customer(
     id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_permissions(["customers:delete"]))
+    current_user: User = Depends(check_permissions(["customers:delete"]))
 ):
     """
     Delete a customer entry by ID and return a detailed deletion response.

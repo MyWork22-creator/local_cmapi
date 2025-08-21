@@ -12,6 +12,7 @@ from .models import User, Role, Permission, TokenBlacklist  # noqa: F401 (ensure
 from .api.v1.auth import router as auth_router
 from .api.v1.users import router as users_router
 from .api.v1.roles import router as roles_router
+from .api.v1.permissions import router as permissions_router
 from .api.v1.role_hierarchy import router as role_hierarchy_router
 from .api.v1 import bank  as banks_router
 from .api.v1 import customers as customer_router
@@ -36,7 +37,16 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Add Security Headers middleware (first)
+# IMPORTANT: Add CORS middleware FIRST so headers are present on all responses (including errors)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.ALLOW_ORIGINS,
+    allow_credentials=settings.ALLOW_CREDENTIALS,
+    allow_methods=settings.ALLOW_METHODS,
+    allow_headers=settings.ALLOW_HEADERS,
+)
+
+# Add Security Headers middleware
 app.add_middleware(SecurityHeadersMiddleware)
 
 # Add Input Validation middleware
@@ -48,21 +58,13 @@ app.add_middleware(RequestSizeMiddleware, max_request_size=10 * 1024 * 1024)  # 
 # Add Security Headers Validation middleware
 app.add_middleware(SecurityHeadersValidationMiddleware)
 
-# Add CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.ALLOW_ORIGINS,
-    allow_credentials=settings.ALLOW_CREDENTIALS,
-    allow_methods=settings.ALLOW_METHODS,
-    allow_headers=settings.ALLOW_HEADERS,
-)
-
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.include_router(auth_router, prefix="/api/v1", tags=["authentication"])
 app.include_router(users_router, prefix="/api/v1", tags=["users"])
 app.include_router(roles_router, prefix="/api/v1", tags=["roles"])
+app.include_router(permissions_router, prefix="/api/v1", tags=["permissions"])
 app.include_router(role_hierarchy_router, prefix="/api/v1", tags=["role-hierarchy"])
 app.include_router(banks_router.router, prefix="/api/v1", tags=["banks"])
 app.include_router(customer_router.router, prefix="/api/v1", tags=["customers"])

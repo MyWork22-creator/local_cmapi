@@ -96,6 +96,14 @@ class Settings(BaseSettings):
     CREATE_ALL_ON_STARTUP: bool = Field(True, env="CREATE_ALL_ON_STARTUP")
     ENVIRONMENT: str = Field("development", env="ENVIRONMENT")  # development, staging, production
 
+    # Database
+    DB_TYPE: str = Field("mysql", env="DB_CONNECTION")
+    DB_USER: str = Field(..., env="DB_USERNAME")
+    DB_PASSWORD: str = Field(..., env="DB_PASSWORD")
+    DB_HOST: str = Field(..., env="DB_HOST")
+    DB_PORT: int = Field(3306, env="DB_PORT")
+    DB_NAME: str = Field(..., env="DB_DATABASE")
+
     @property
     def is_production(self) -> bool:
         """Check if running in production environment."""

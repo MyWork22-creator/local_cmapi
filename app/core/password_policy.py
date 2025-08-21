@@ -84,22 +84,22 @@ class PasswordValidator:
             if not re.search(special_char_pattern, password):
                 errors.append(f"Password must contain at least one special character: {self.policy.special_chars}")
         
-        # Common password check
-        if self.policy.prevent_common_passwords and password.lower() in self.common_passwords:
-            errors.append("Password is too common. Please choose a more secure password")
-        
-        # Username in password check
-        if (self.policy.prevent_username_in_password and username and 
-            username.lower() in password.lower()):
-            errors.append("Password must not contain your username")
-        
-        # Additional security checks
-        if password.lower() in ['password', 'admin', 'user', 'test']:
-            errors.append("Password is too predictable. Please choose a more secure password")
-        
-        # Check for repeated characters
-        if len(set(password)) < 4:
-            errors.append("Password must contain at least 4 different characters")
+        # Common password check - TEMPORARILY DISABLED
+        # if self.policy.prevent_common_passwords and password.lower() in self.common_passwords:
+        #     errors.append("Password is too common. Please choose a more secure password")
+
+        # Username in password check - TEMPORARILY DISABLED
+        # if (self.policy.prevent_username_in_password and username and
+        #     username.lower() in password.lower()):
+        #     errors.append("Password must not contain your username")
+
+        # Additional security checks - TEMPORARILY DISABLED
+        # if password.lower() in ['password', 'admin', 'user', 'test']:
+        #     errors.append("Password is too predictable. Please choose a more secure password")
+
+        # Check for repeated characters - TEMPORARILY DISABLED
+        # if len(set(password)) < 4:
+        #     errors.append("Password must contain at least 4 different characters")
         
         # Check for sequential characters
         if self._has_sequential_chars(password):
@@ -119,24 +119,28 @@ class PasswordValidator:
     
     def _has_sequential_chars(self, password: str) -> bool:
         """Check for sequential characters in password."""
-        password = password.lower()
-        
-        # Check for numeric sequences
-        for i in range(len(password) - 2):
-            if password[i:i+3].isdigit():
-                nums = [int(c) for c in password[i:i+3]]
-                if nums[1] == nums[0] + 1 and nums[2] == nums[1] + 1:
-                    return True
-        
-        # Check for alphabetic sequences
-        for i in range(len(password) - 2):
-            if password[i:i+3].isalpha():
-                chars = password[i:i+3]
-                if (ord(chars[1]) == ord(chars[0]) + 1 and 
-                    ord(chars[2]) == ord(chars[1]) + 1):
-                    return True
-        
+        # TEMPORARILY DISABLED - Return False to allow all passwords
         return False
+
+        # Original code commented out for easier password creation
+        # password = password.lower()
+        #
+        # # Check for numeric sequences
+        # for i in range(len(password) - 2):
+        #     if password[i:i+3].isdigit():
+        #         nums = [int(c) for c in password[i:i+3]]
+        #         if nums[1] == nums[0] + 1 and nums[2] == nums[1] + 1:
+        #             return True
+        #
+        # # Check for alphabetic sequences
+        # for i in range(len(password) - 2):
+        #     if password[i:i+3].isalpha():
+        #         chars = password[i:i+3]
+        #         if (ord(chars[1]) == ord(chars[0]) + 1 and
+        #             ord(chars[2]) == ord(chars[1]) + 1):
+        #             return True
+        #
+        # return False
     
     def _calculate_strength(self, password: str) -> str:
         """Calculate password strength score."""

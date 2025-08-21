@@ -281,14 +281,7 @@ def assign_permissions_to_role(
     }
 
 
-@router.get("/permissions", response_model=List[PermissionOut])
-def list_permissions(
-    db: Session = Depends(get_db),
-    _: bool = Depends(check_permissions(["roles:read"])),
-) -> List[PermissionOut]:
-    """List all permissions. Requires roles:read permission."""
-    permissions = db.query(Permission).all()
-    return permissions
+
 
 
 @router.get("/roles/{role_id}/users")
