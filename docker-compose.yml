@@ -76,8 +76,9 @@ services:
       - "--max_connections=100"
       - "--innodb_buffer_pool_size=256M"
       - "--performance_schema=0"
+    # NEW and IMPROVED
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$${MYSQL_ROOT_PASSWORD} || exit 1"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
       interval: 10s
       timeout: 5s
       retries: 30
