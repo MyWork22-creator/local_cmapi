@@ -27,7 +27,6 @@ services:
       sh -c 'cat <<EOF> /etc/caddy/Caddyfile
       {
         email ngankang2@gmail.com
-
       }
       api.157-10-73-201.sslip.io {
         reverse_proxy crm_server:8000
@@ -76,9 +75,8 @@ services:
       - "--max_connections=100"
       - "--innodb_buffer_pool_size=256M"
       - "--performance_schema=0"
-    # NEW and IMPROVED
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      test: ["CMD-SHELL", "mysql -h 127.0.0.1 -uroot -p\"$${MYSQL_ROOT_PASSWORD}\" -e 'SELECT 1'"]
       interval: 10s
       timeout: 5s
       retries: 30
