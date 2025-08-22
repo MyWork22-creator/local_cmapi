@@ -1,53 +1,83 @@
 version: '3.8'
 
+networks:
+  edge: {}
+  appnet: {}
+
+volumes:
+  caddy_data:
+  caddy_config:
+  mysql_data:
+
 services:
+  caddy:
+    image: caddy:latest
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - crm_server
+    networks:
+      - edge
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    command: >
+      sh -c 'cat <<EOF> /etc/caddy/Caddyfile
+      {
+        email ngankang2@gmail.com
+
+      }
+      api.157-10-73-201.sslip.io {
+        reverse_proxy crm_server:8000
+      }
+      EOF
+      && caddy run --config /etc/caddy/Caddyfile --adapter caddyfile' 
+  
   crm_server:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: crm-app
+    container_name: crm-api
     restart: unless-stopped
     working_dir: /app
     networks:
-      - crm_network
+      - appnet
+      - edge
     depends_on:
       mysql:
         condition: service_healthy
+
     environment:
-      - DB_CONNECTION=${DB_CONNECTION}
-      - DB_HOST=${DB_HOST}
-      - DB_PORT=${DB_PORT}
+      - DB_CONNECTION=${DB_CONNECTION:-mysql}
+      - DB_HOST=${DB_HOST:-crm-mysql}
+      - DB_PORT=${DB_PORT:-3306}
       - DB_DATABASE=${DB_DATABASE}
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
-      - DB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
-    ports:
-      - '8100:8000'
+    expose: 
+      - "8000"
 
   mysql:
-    image: 'mysql:8.0.42'
+    image: mysql:8.0.42
     container_name: crm-mysql
     restart: unless-stopped
-    ports:
-      - '3308:3306'
+
     environment:
-      MYSQL_DATABASE: '${DB_DATABASE}'
-      MYSQL_USER: '${DB_USERNAME}'
-      MYSQL_PASSWORD: '${DB_PASSWORD}'
-      MYSQL_ROOT_PASSWORD: '${DB_ROOT_PASSWORD}'
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+
     volumes:
-      - 'sail-mysql:/var/lib/mysql'
+      - mysql_data:/var/lib/mysql
+
     networks:
-      - crm_network
+      - appnet
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      retries: 3
+      interval: 10s
       timeout: 5s
-
-networks:
-  crm_network:
-    driver: bridge
-
-volumes:
-  sail-mysql:
-    driver: local
+      retries: 5
+    
