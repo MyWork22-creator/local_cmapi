@@ -59,7 +59,7 @@ services:
       - "8000"
 
   mysql:
-    image: mysql:8.0.42
+    image: mysql:8.0.33
     container_name: mysql-db
     restart: unless-stopped
     environment:
