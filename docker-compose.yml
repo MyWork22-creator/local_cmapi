@@ -23,12 +23,11 @@ services:
     volumes:
       - caddy_data:/data
       - caddy_config:/config
-    # FIX: Replaced the failing 'cat' command with a more reliable 'printf' command.
     command:
       - "sh"
       - "-c"
       - |
-        printf '{ \n  email ngankang2@gmail.com \n} \n\ncrm_server.157-10-73-201.sslip.io { \n  reverse_proxy crm_server:8000 \n}' > /etc/caddy/Caddyfile && \
+        printf '{ \n  email ngankang2@gmail.com \n} \n\ncrm-server.157-10-73-201.sslip.io { \n  reverse_proxy crm_server:8000 \n}' > /etc/caddy/Caddyfile && \
         caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
 
   crm_server:
