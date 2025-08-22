@@ -39,6 +39,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    image: crm_server:latest 
     container_name: crm-api
     restart: unless-stopped
     working_dir: /app
