@@ -1,4 +1,4 @@
-version: '3.8'
+version: '3.9'
 
 networks:
   edge: {}
@@ -39,8 +39,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: crm_server:latest 
-    container_name: crm-api
+    image: fastapi_api:latest
+    container_name: fastapi-api
     restart: unless-stopped
     working_dir: /app
     networks:
@@ -52,7 +52,7 @@ services:
 
     environment:
       - DB_CONNECTION=${DB_CONNECTION:-mysql}
-      - DB_HOST=${DB_HOST:-crm-mysql}
+      - DB_HOST=${DB_HOST:-mysql}
       - DB_PORT=${DB_PORT:-3306}
       - DB_DATABASE=${DB_DATABASE}
       - DB_USERNAME=${DB_USERNAME}
@@ -62,23 +62,20 @@ services:
 
   mysql:
     image: mysql:8.0.42
-    container_name: crm-mysql
+    container_name: mysql-db
     restart: unless-stopped
-
     environment:
       MYSQL_DATABASE: ${DB_DATABASE}
       MYSQL_USER: ${DB_USERNAME}
       MYSQL_PASSWORD: ${DB_PASSWORD}
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
-
     volumes:
       - mysql_data:/var/lib/mysql
-
-    networks:
-      - appnet
+    networks: [appnet]
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$${MYSQL_ROOT_PASSWORD} || exit 1"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 30
+      start_period: 60s
     
