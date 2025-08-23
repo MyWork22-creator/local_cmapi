@@ -58,7 +58,7 @@ async def get_current_user(
 def check_permissions(required_permissions: List[str]):
     async def permission_checker(
         current_user: User = Depends(get_current_user)
-    ) -> bool:
+    ) -> User:
         if not current_user.role:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -73,7 +73,7 @@ def check_permissions(required_permissions: List[str]):
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=f"Not enough permissions. Required: {', '.join(required_permissions)}"
             )
-        return True
+        return current_user
     return permission_checker
 
 def require_admin(current_user: User = Depends(get_current_user)) -> bool:
