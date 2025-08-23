@@ -72,8 +72,8 @@ class Settings(BaseSettings):
             return self.SECRET_KEY
 
     # JWT
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(10, env="ACCESS_TOKEN_EXPIRE_MINUTES")
-    REFRESH_TOKEN_EXPIRE_MINUTES: int = Field(60 * 24 * 7, env="REFRESH_TOKEN_EXPIRE_MINUTES")  # 7 days
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(43200, env="ACCESS_TOKEN_EXPIRE_MINUTES")
+    REFRESH_TOKEN_EXPIRE_MINUTES: int = Field(86400, env="REFRESH_TOKEN_EXPIRE_MINUTES")  # 7 days
     JWT_ISSUER: str = Field("fastapi-auth-demo", env="JWT_ISSUER")
     JWT_AUDIENCE: Optional[str] = Field(None, env="JWT_AUDIENCE")
 
