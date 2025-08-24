@@ -23,9 +23,9 @@ services:
     depends_on:
       - fastapi
     volumes:
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./ssl:/etc/nginx/ssl:ro
-      - ./logs/nginx:/var/log/nginx
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf  # mounts the nginx.conf file
+      - ./ssl:/etc/nginx/ssl                        # mounts SSL folder if you have one
+      - ./logs/nginx:/var/log/nginx        
 
   fastapi:
     build:
