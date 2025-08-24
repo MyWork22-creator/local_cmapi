@@ -47,7 +47,7 @@ services:
     expose:
       - "8000"
     labels:
-      - "caddy=crm.127-0-0-1.sslip.io"
+      - "caddy=crm-server.127-0-0-1.sslip.io"
       - "caddy.reverse_proxy={{upstreams 8000}}"
 
   mysql:
