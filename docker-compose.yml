@@ -47,10 +47,9 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
     expose:
       - "8000"
-     volumes:
+    volumes:
       - ./app:/app/app  # Mount your code for development (optional)
       - ./logs:/app/logs  # For application logs
-
 
   mysql:
     image: mysql:8.0.33
@@ -72,7 +71,7 @@ services:
       - "--innodb_buffer_pool_size=1G"
       - "--performance_schema=0"
     healthcheck:
-      test: ["CMD-SHELL", "mysql -h 127.0.0.1 -uroot -p\"$${MYSQL_ROOT_PASSWORD}\" -e 'SELECT 1'"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
       interval: 10s
       timeout: 5s
       retries: 10
