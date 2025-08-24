@@ -6,8 +6,24 @@ networks:
 
 volumes:
   mysql_data:
+  caddy_data:
+  caddy_config:
 
 services:
+  caddy:
+    image: caddy:latest
+    container_name: caddy_proxy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - edge
+
   crm_server:
     build:
       context: .
@@ -42,7 +58,8 @@ services:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
     volumes:
       - mysql_data:/var/lib/mysql
-    networks: [appnet]
+    networks:
+      - appnet
     command:
       - "--default-authentication-plugin=mysql_native_password"
       - "--max_connections=100"
