@@ -50,11 +50,6 @@ services:
       PYTHONPATH: /app
     expose:
       - "8000"
-    volumes:
-      - ./app:/app/app:ro
-      - ./alembic:/app/alembic:ro
-      - ./alembic.ini:/app/alembic.ini:ro
-      - ./logs:/app/logs
 
   mysql:
     image: mysql:8.0.33
