@@ -5,26 +5,10 @@ networks:
   appnet: {}
 
 volumes:
-  caddy_data:
-  caddy_config:
   mysql_data:
 
 services:
-  caddy:
-    image: caddy:latest
-    container_name: caddy_proxy
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    networks:
-      - edge
-    volumes:
-      - ./caddy:/etc/caddy
-      - caddy_data:/data
-      - caddy_config:/config
-      
-  fastapi_api:
+  crm_server:
     build:
       context: .
       dockerfile: Dockerfile
