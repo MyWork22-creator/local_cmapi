@@ -1,34 +1,28 @@
 version: '3.9'
 
-networks:
-  edge: {}
-  appnet: {}
-
 volumes:
   caddy_data:
   caddy_config:
   mysql_data:
 
+networks:
+  edge: {}
+  appnet: {}
+  
 services:
   caddy:
     image: caddy:latest
+    container_name: caddy_proxy
     restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
-    depends_on:
-      - crm_server
     networks:
       - edge
     volumes:
+      - ./caddy:/srv/docker/caddy
       - caddy_data:/data
       - caddy_config:/config
-    command:
-      - "sh"
-      - "-c"
-      - |
-        printf '{ \n  email ngankang2@gmail.com \n} \n\ncrm-server.157-10-73-201.sslip.io { \n  reverse_proxy crm_server:8000 \n}' > /etc/caddy/Caddyfile && \
-        caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
 
   crm_server:
     build:
@@ -53,6 +47,9 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
     expose:
       - "8000"
+    labels:
+      - "caddy=crm.127-0-0-1.sslip.io"
+      - "caddy.reverse_proxy={{upstreams 8000}}"
 
   mysql:
     image: mysql:8.0.33
