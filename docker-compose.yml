@@ -28,7 +28,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: fastapi_api:latest
     container_name: fastapi-api
     restart: unless-stopped
     working_dir: /app
