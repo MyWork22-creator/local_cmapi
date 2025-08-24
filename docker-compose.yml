@@ -13,7 +13,6 @@ services:
   # Caddy reverse proxy
   caddy:
     image: caddy:latest
-    container_name: caddy_proxy  # keep your existing container
     restart: unless-stopped
     ports:
       - "80:80"
