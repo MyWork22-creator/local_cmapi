@@ -12,7 +12,6 @@ networks:
 services:
   caddy:
     image: caddy:latest
-    container_name: caddy_proxy_fastapi
     restart: unless-stopped
     ports:
       - "80:80"
