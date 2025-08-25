@@ -2,6 +2,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import and_
 
 from app.database import get_db
 from app.models.banks import Bank
@@ -27,26 +28,23 @@ def create_bank(
     db: Session = Depends(get_db),
     current_user: User = Depends(check_permissions(["banks:create"]))
 ):
-    
+    # Proactive check for a conflicting bank name
+    existing_bank = db.query(Bank).filter(Bank.bank_name == payload.bank_name).first()
+    if existing_bank:
+        raise HTTPException(status_code=409, detail="Bank with this name already exists.")
+        
     new_bank = Bank(
         **payload.model_dump(),
         created_by_user_id=current_user.id
     )
     
-    try:
-        db.add(new_bank)
-        db.commit()
-        db.refresh(new_bank)
-        return {
-            "message": "Bank created successfully",
-            "data": new_bank
-        }
-    except IntegrityError:
-        db.rollback()  # Rollback in case of a failed commit
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Bank with this name already exists."
-        )
+    db.add(new_bank)
+    db.commit()
+    db.refresh(new_bank)
+    return SuccessResponse(
+        message="Bank created successfully",
+        data = BankResponse.model_validate(new_bank)
+    )
 
 @router.get("/banks", response_model=ListResponse[BankResponse])
 def list_banks(
@@ -69,18 +67,6 @@ def list_banks(
     
     return ListResponse[BankResponse](items=items, total=total_count, limit=limit, offset=offset)
 
-@router.get("/banks/{bank_id}", response_model=BankResponse)
-def get_bank(
-    bank_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(check_permissions(["banks:read"]))
-):
-    bank = db.query(Bank).options(joinedload(Bank.created_by_user).joinedload(User.role)).filter(Bank.bank_id == bank_id).first()
-    if not bank:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Bank not found")
-    return bank
-
-
 @router.put("/banks/{bank_id}", response_model=SuccessResponse[BankResponse])
 def update_bank(
     bank_id: int,
@@ -88,14 +74,28 @@ def update_bank(
     db: Session = Depends(get_db),
     current_user: User = Depends(check_permissions(["banks:update"]))
 ):
+    # Step 1: Check if the bank to be updated exists
     bank = db.query(Bank).filter(Bank.bank_id == bank_id).first()
     if not bank:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Bank not found")
 
-    
     update_data = payload.model_dump(exclude_unset=True)
 
-    
+    # Step 2: Check for a conflicting bank name
+    if 'bank_name' in update_data:
+        existing_bank = db.query(Bank).filter(
+            and_(
+                Bank.bank_name == update_data['bank_name'],
+                Bank.bank_id != bank_id  # Ensures you're not checking the current bank
+            )
+        ).first()
+        if existing_bank:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="A bank with this name already exists."
+            )
+
+    # Step 3: Apply the updates
     for key, value in update_data.items():
         setattr(bank, key, value)
     
@@ -105,7 +105,6 @@ def update_bank(
         message=f"Bank with ID {bank_id} updated successfully",
         data = BankResponse.model_validate(bank)
     )
-
 
 @router.delete("/banks/{bank_id}", response_model=BankDeletionResponse, responses={
     404: {"model": ErrorResponse, "description": "Bank not found"},
