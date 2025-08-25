@@ -1,40 +1,22 @@
 version: '3.9'
 
 networks:
-  edge: {}
-  appnet: {}
+  webnet: 
+    external: true
+  appnet:
+    driver: bridge
 
 volumes:
   mysql_data:
-  caddy_data:
-  caddy_config:
 
 services:
-  # Caddy reverse proxy
-  caddy:
-    image: caddy:latest
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./srv/docker/caddy/Caddyfile:/etc/caddy/Caddyfile
-      - caddy_data:/data
-      - caddy_config:/config
-    networks:
-      - edge
-
-  # FastAPI backend
-  crm_server:
+  cm_api:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: fastapi-api
+    container_name: cm-api
     restart: unless-stopped
     working_dir: /app
-    networks:
-      - appnet
-      - edge
     depends_on:
       mysql:
         condition: service_healthy
@@ -47,8 +29,13 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
     expose:
       - "8000"
+    labels:
+      caddy: cmapi.onepixel.com
+      caddy.reverse_proxy: "{{upstreams 8000}}"
+    networks:
+      - webnet
+      - appnet
 
-  # MySQL database
   mysql:
     image: mysql:8.0.33
     container_name: mysql-db
