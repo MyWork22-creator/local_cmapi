@@ -61,6 +61,12 @@ app.add_middleware(SecurityHeadersValidationMiddleware)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+import os
+
+os.makedirs("app/static/logos", exist_ok=True)
+
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
+
 app.include_router(auth_router, prefix="/api/v1", tags=["authentication"])
 app.include_router(users_router, prefix="/api/v1", tags=["users"])
 app.include_router(roles_router, prefix="/api/v1", tags=["roles"])
