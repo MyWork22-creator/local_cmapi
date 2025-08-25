@@ -42,13 +42,6 @@ class BankBase(BaseModel):
         """Validate bank name format and content."""
         return bank_name_validator(cls, v)
 
-    @field_validator('logo')
-    @classmethod
-    def validate_logo_url(cls, v: Optional[str]) -> Optional[str]:
-        """Validate logo URL format."""
-        if v:
-            return url_validator(cls, v)
-        return v
 
 class BankCreate(BankBase):
     """
@@ -83,13 +76,6 @@ class BankUpdate(BaseModel):
     def validate_bank_name(cls, v: Optional[str]) -> Optional[str]:
         if v:
             return bank_name_validator(cls, v)
-        return v
-
-    @field_validator('logo')
-    @classmethod
-    def validate_logo_url(cls, v: Optional[str]) -> Optional[str]:
-        if v:
-            return url_validator(cls, v)
         return v
 
     class Config:
