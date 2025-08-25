@@ -30,7 +30,7 @@ services:
     expose:
       - "8000"
     labels:
-      caddy: apicm..duckdns.org
+      caddy: apicm.duckdns.org
       caddy.reverse_proxy: "{{upstreams 8000}}"
     networks:
       - webnet
