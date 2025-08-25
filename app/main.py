@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
+from fastapi.staticfiles import StaticFiles
 
 from .core.config import settings
 from .database import Base, engine
@@ -60,6 +61,12 @@ app.add_middleware(SecurityHeadersValidationMiddleware)
 
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+import os
+
+os.makedirs("app/static/logos", exist_ok=True)
+
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 app.include_router(auth_router, prefix="/api/v1", tags=["authentication"])
 app.include_router(users_router, prefix="/api/v1", tags=["users"])

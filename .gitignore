@@ -67,3 +67,4 @@ coverage.xml
 # Mac/Linux/Windows crap
 .DS_Store
 Thumbs.db
+static/

@@ -1,8 +1,12 @@
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile, Form
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import and_
+import os
+from pathlib import Path
+import shutil
+import uuid
 
 from app.database import get_db
 from app.models.banks import Bank
@@ -20,30 +24,54 @@ common_responses = {
 
 router = APIRouter(tags=["banks"],responses=common_responses)
 
-@router.post("/banks", response_model=SuccessResponse[BankResponse], responses={
-    409: {"model": ErrorResponse}
-})
+@router.post("/banks", response_model=SuccessResponse[BankResponse])
 def create_bank(
-    payload: BankCreate,
+    # Use Form to indicate these are form fields, not JSON
+    bank_name: str = Form(...),
+    description: str = Form(None),
+    # Use File for the uploaded file
+    logo: UploadFile = File(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(check_permissions(["banks:create"]))
 ):
-    # Proactive check for a conflicting bank name
-    existing_bank = db.query(Bank).filter(Bank.bank_name == payload.bank_name).first()
+    """Creates a new bank with an optional logo upload."""
+    
+    existing_bank = db.query(Bank).filter(Bank.bank_name == bank_name).first()
     if existing_bank:
         raise HTTPException(status_code=409, detail="Bank with this name already exists.")
-        
+
+    logo_url = None
+    if logo:
+        # Validate file type
+        allowed_types = ["image/jpeg", "image/png", "image/svg+xml","image/webp"]
+        if logo.content_type not in allowed_types:
+            raise HTTPException(status_code=400, detail="Unsupported file type.")
+
+        # Generate a unique, safe filename using UUID
+        file_extension = logo.filename.split(".")[-1]
+        unique_filename = f"{uuid.uuid4()}.{file_extension}"
+        upload_path = f"app/static/logos/{unique_filename}"
+
+        # Save the file to the local filesystem
+        with open(upload_path, "wb") as buffer:
+            shutil.copyfileobj(logo.file, buffer)
+            
+        logo_url = f"/static/logos/{unique_filename}"
+
     new_bank = Bank(
-        **payload.model_dump(),
+        bank_name=bank_name,
+        description=description,
+        logo=logo_url,
         created_by_user_id=current_user.id
     )
     
     db.add(new_bank)
     db.commit()
     db.refresh(new_bank)
+    
     return SuccessResponse(
         message="Bank created successfully",
-        data = BankResponse.model_validate(new_bank)
+        data=BankResponse.model_validate(new_bank)
     )
 
 @router.get("/banks", response_model=ListResponse[BankResponse])
@@ -106,6 +134,46 @@ def update_bank(
         data = BankResponse.model_validate(bank)
     )
 
+@router.put("/banks/{bank_id}/logo", response_model=SuccessResponse[BankResponse])
+def upload_bank_logo(
+    bank_id: int,
+    logo: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(check_permissions(["banks:update"]))
+):
+    """Uploads and updates the logo for an existing bank."""
+    
+    bank = db.query(Bank).filter(Bank.bank_id == bank_id).first()
+    if not bank:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Bank not found.")
+
+    # Validate file type
+    allowed_types = ["image/jpeg", "image/png", "image/svg+xml","image/webp"]
+    if logo.content_type not in allowed_types:
+        raise HTTPException(status_code=400, detail="Unsupported file type.")
+
+    # Generate a filename based on the bank ID for consistency and easy lookup
+    file_extension = logo.filename.split(".")[-1]
+    filename = f"bank_{bank.bank_id}.{file_extension}"
+    upload_path = f"app/static/logos/{filename}"
+    
+    # Save the new file, overwriting any old one
+    with open(upload_path, "wb") as buffer:
+        shutil.copyfileobj(logo.file, buffer)
+        
+    logo_url = f"/static/logos/{filename}"
+    bank.logo = logo_url
+    
+    db.commit()
+    db.refresh(bank)
+    
+    return SuccessResponse(
+        message=f"Bank logo for ID {bank_id} updated successfully",
+        data=BankResponse.model_validate(bank)
+    )
+
+STATIC_DIR = Path(__file__).parent.parent / "static"
+
 @router.delete("/banks/{bank_id}", response_model=BankDeletionResponse, responses={
     404: {"model": ErrorResponse, "description": "Bank not found"},
     409: {"model": ErrorResponse, "description": "Conflict: Bank cannot be deleted as it has associated customers."}
@@ -128,6 +196,19 @@ def delete_bank(
             detail="Bank cannot be deleted because it has associated customers."
         )
 
+    # Delete the associated logo file from the filesystem
+    if bank.logo:
+        # Construct the absolute file path from the relative URL
+        logo_path = Path("app") / bank.logo.lstrip('/')
+        
+        # Check if the file exists before trying to delete it
+        if logo_path.exists() and logo_path.is_file():
+            try:
+                os.remove(logo_path)
+                print(f"Successfully deleted logo file: {logo_path}")
+            except OSError as e:
+                print(f"Error deleting logo file {logo_path}: {e}")
+
     # Store details before deletion
     response_data = {
         "bank_id": bank.bank_id,
@@ -135,7 +216,7 @@ def delete_bank(
         "created_by_user_id": bank.created_by_user_id
     }
 
-    # If no customers exist, proceed with deletion
+    # Proceed with database deletion
     db.delete(bank)
     db.commit()
 
