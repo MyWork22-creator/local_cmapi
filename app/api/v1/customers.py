@@ -5,6 +5,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.exc import IntegrityError, DBAPIError
+from sqlalchemy import and_
 
 from app.database import get_db
 from app.models.customers import Customer
@@ -111,8 +112,10 @@ def get_customer(
         data=customer
     )
 
+
 @router.put("/customers/{id}", response_model=SuccessResponse[CustomerResponse], responses={
-    404: {"model": ErrorResponse, "description": "Not Found: Customer not found"}
+    404: {"model": ErrorResponse, "description": "Not Found: Customer not found"},
+    409: {"model": ErrorResponse, "description": "Conflict: New customer ID already exists"}
 })
 def update_customer(
     id: int,
@@ -123,12 +126,28 @@ def update_customer(
     """
     Update an existing customer's information.
     """
+    # 1. Primary check: Find the customer to update using the ID from the URL.
     customer = db.query(Customer).filter(Customer.id == id).first()
     if not customer:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Customer not found")
 
     update_data = payload.model_dump(exclude_unset=True)
 
+    # 2. Secondary check: Validate the new customer_id in the payload.
+    if 'customer_id' in update_data:
+        existing_customer = db.query(Customer).filter(
+            and_(
+                Customer.customer_id == update_data['customer_id'],
+                Customer.id != id
+            )
+        ).first()
+        if existing_customer:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Customer ID {update_data['customer_id']} already exists."
+            )
+
+    # 3. Apply the updates.
     for key, value in update_data.items():
         setattr(customer, key, value)
 
@@ -136,7 +155,6 @@ def update_customer(
         db.commit()
         db.refresh(customer)
         
-        # Convert the SQLAlchemy object to the Pydantic model before returning
         return SuccessResponse(
             message=f"Customer with ID {id} updated successfully",
             data=CustomerResponse.model_validate(customer)
@@ -145,8 +163,10 @@ def update_customer(
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=f"Bank with id {payload.bank_id} not found"
+            detail="A conflict occurred, likely due to a non-existent bank ID."
         )
+
+
 @router.delete("/customers/{id}", response_model=CustomerDeletionResponse, responses={
     404: {"model": ErrorResponse, "description": "Not Found: Customer not found"}
 })
