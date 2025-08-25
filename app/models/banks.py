@@ -85,13 +85,6 @@ class Bank(Base):
         """Validate bank name format."""
         return BankValidators.validate_bank_name(bank_name)
 
-    @validates('logo')
-    def validate_logo_url(self, key: str, logo: Optional[str]) -> Optional[str]:
-        """Validate logo URL format."""
-        if logo:
-            return CommonValidators.validate_url(logo)
-        return logo
-
     @validates('description')
     def validate_description(self, key: str, description: Optional[str]) -> Optional[str]:
         """Validate and sanitize description."""
