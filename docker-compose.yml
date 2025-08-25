@@ -1,13 +1,4 @@
-version: '3.9'
-
-networks:
-  webnet: 
-    external: true
-  appnet:
-    driver: bridge
-
-volumes:
-  mysql_data:
+version: "3.9"
 
 services:
   cm_api:
@@ -60,3 +51,12 @@ services:
       timeout: 5s
       retries: 30
       start_period: 60s
+
+volumes:
+  mysql_data:
+
+networks:
+  webnet:
+    external: true
+  appnet:
+    driver: bridge
