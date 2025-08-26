@@ -1,2 +1,1 @@
-0 1 * * * /scripts/backup_db.sh >> /var/log/cron.log 2>&1
-
+0 1 * * * /app/scripts/backup_db.sh >> /var/log/cron.log 2>&1
