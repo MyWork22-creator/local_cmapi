@@ -1,46 +1,13 @@
-version: '3.9'
-
-networks:
-  edge: {}
-  appnet: {}
-
-volumes:
-  caddy_data:
-  caddy_config:
-  mysql_data:
+version: "3.9"
 
 services:
-  caddy:
-    image: caddy:latest
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    depends_on:
-      - crm_server
-    networks:
-      - edge
-    volumes:
-      - caddy_data:/data
-      - caddy_config:/config
-    command:
-      - "sh"
-      - "-c"
-      - |
-        printf '{ \n  email ngankang2@gmail.com \n} \n\ncrm-server.157-10-73-201.sslip.io { \n  reverse_proxy crm_server:8000 \n}' > /etc/caddy/Caddyfile && \
-        caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
-
-  crm_server:
+  cm_api:
     build:
       context: .
       dockerfile: Dockerfile
-    image: fastapi_api:latest
-    container_name: fastapi-api
+    container_name: cm-api
     restart: unless-stopped
     working_dir: /app
-    networks:
-      - appnet
-      - edge
     depends_on:
       mysql:
         condition: service_healthy
@@ -53,7 +20,13 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
     expose:
       - "8000"
-
+    labels:
+      caddy: apicm.duckdns.org
+      caddy.reverse_proxy: "{{upstreams 8000}}"
+    networks:
+      - webnet
+      - appnet
+ 
   mysql:
     image: mysql:8.0.33
     container_name: mysql-db
@@ -65,7 +38,8 @@ services:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
     volumes:
       - mysql_data:/var/lib/mysql
-    networks: [appnet]
+    networks:
+      - appnet
     command:
       - "--default-authentication-plugin=mysql_native_password"
       - "--max_connections=100"
@@ -77,3 +51,11 @@ services:
       timeout: 5s
       retries: 30
       start_period: 60s
+volumes:
+  mysql_data:
+
+networks:
+  webnet:
+    external: true
+  appnet:
+    driver: bridge
