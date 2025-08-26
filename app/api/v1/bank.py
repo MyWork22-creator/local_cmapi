@@ -26,7 +26,7 @@ router = APIRouter(tags=["banks"],responses=common_responses)
 
 @router.post("/banks", response_model=SuccessResponse[BankResponse])
 def create_bank(
-    # Use Form to indicate these are form fields, not JSON
+    
     bank_name: str = Form(...),
     description: str = Form(None),
     # Use File for the uploaded file
@@ -102,19 +102,19 @@ def update_bank(
     db: Session = Depends(get_db),
     current_user: User = Depends(check_permissions(["banks:update"]))
 ):
-    # Step 1: Check if the bank to be updated exists
+    
     bank = db.query(Bank).filter(Bank.bank_id == bank_id).first()
     if not bank:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Bank not found")
 
     update_data = payload.model_dump(exclude_unset=True)
 
-    # Step 2: Check for a conflicting bank name
+    
     if 'bank_name' in update_data:
         existing_bank = db.query(Bank).filter(
             and_(
                 Bank.bank_name == update_data['bank_name'],
-                Bank.bank_id != bank_id  # Ensures you're not checking the current bank
+                Bank.bank_id != bank_id  
             )
         ).first()
         if existing_bank:
@@ -147,20 +147,30 @@ def upload_bank_logo(
     if not bank:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Bank not found.")
 
-    # Validate file type
+    # Step 1: Delete the old logo if it exists
+    if bank.logo:
+        old_logo_path = Path("app") / bank.logo.lstrip('/')
+        if old_logo_path.exists() and old_logo_path.is_file():
+            try:
+                os.remove(old_logo_path)
+                print(f"Successfully deleted old logo file: {old_logo_path}")
+            except OSError as e:
+                print(f"Error deleting old logo file {old_logo_path}: {e}")
+
+    # Step 2: Validate file type
     allowed_types = ["image/jpeg", "image/png", "image/svg+xml","image/webp"]
     if logo.content_type not in allowed_types:
         raise HTTPException(status_code=400, detail="Unsupported file type.")
 
-    # Generate a filename based on the bank ID for consistency and easy lookup
+    # Step 3: Generate and save the new filename
     file_extension = logo.filename.split(".")[-1]
     filename = f"bank_{bank.bank_id}.{file_extension}"
     upload_path = f"app/static/logos/{filename}"
     
-    # Save the new file, overwriting any old one
     with open(upload_path, "wb") as buffer:
         shutil.copyfileobj(logo.file, buffer)
         
+    # Step 4: Update the database with the new logo URL
     logo_url = f"/static/logos/{filename}"
     bank.logo = logo_url
     
@@ -171,7 +181,6 @@ def upload_bank_logo(
         message=f"Bank logo for ID {bank_id} updated successfully",
         data=BankResponse.model_validate(bank)
     )
-
 STATIC_DIR = Path(__file__).parent.parent / "static"
 
 @router.delete("/banks/{bank_id}", response_model=BankDeletionResponse, responses={
@@ -183,7 +192,7 @@ def delete_bank(
     db: Session = Depends(get_db),
     current_user: User = Depends(check_permissions(["banks:delete"]))
 ):
-    # Check if the bank exists
+   
     bank = db.query(Bank).filter(Bank.bank_id == bank_id).first()
     if not bank:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Bank not found")
@@ -196,12 +205,12 @@ def delete_bank(
             detail="Bank cannot be deleted because it has associated customers."
         )
 
-    # Delete the associated logo file from the filesystem
+    
     if bank.logo:
-        # Construct the absolute file path from the relative URL
+       
         logo_path = Path("app") / bank.logo.lstrip('/')
         
-        # Check if the file exists before trying to delete it
+        
         if logo_path.exists() and logo_path.is_file():
             try:
                 os.remove(logo_path)
@@ -209,7 +218,7 @@ def delete_bank(
             except OSError as e:
                 print(f"Error deleting logo file {logo_path}: {e}")
 
-    # Store details before deletion
+    
     response_data = {
         "bank_id": bank.bank_id,
         "bank_name": bank.bank_name,

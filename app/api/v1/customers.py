@@ -32,17 +32,17 @@ def create_customer(
     db: Session = Depends(get_db),
     current_user: User = Depends(check_permissions(["customers:create"]))
 ):
-    # Check if the bank exists
+   
     bank = db.query(Bank).filter(Bank.bank_id == payload.bank_id).first()
     if not bank:
         raise HTTPException(status_code=404, detail=f"Bank with id {payload.bank_id} not found")
     
-    # Check if the customer_id already exists
+  
     existing_customer = db.query(Customer).filter(Customer.customer_id == payload.customer_id).first()
     if existing_customer:
         raise HTTPException(status_code=409, detail=f"Customer with id {payload.customer_id} already exists")
 
-    # Create the new customer instance with the provided ID
+
     new_customer = Customer(
         **payload.model_dump(),
         create_by_user=current_user.id,
@@ -60,7 +60,7 @@ def create_customer(
 
 @router.get("/customers", response_model=ListResponse[CustomerResponse])
 def list_customers(
-    limit: int = 50,
+    limit: int = 100,
     offset: int = 0,
     db: Session = Depends(get_db),
     current_user: User = Depends(check_permissions(["customers:read"]))
@@ -147,6 +147,7 @@ def update_customer(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"Bank with id {payload.bank_id} not found"
         )
+        
 @router.delete("/customers/{id}", response_model=CustomerDeletionResponse, responses={
     404: {"model": ErrorResponse, "description": "Not Found: Customer not found"}
 })
