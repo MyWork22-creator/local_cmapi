@@ -54,7 +54,13 @@ services:
       - ./scripts:/app/scripts
       - /srv/backups:/backups
       - /var/run/docker.sock:/var/run/docker.sock
-    env_file: .env # <-- Pass the environment variables from your .env file
+    environment:
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+      - DB_CONNECTION=${DB_CONNECTION}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
     entrypoint: sh -c "apk add --no-cache bash mysql-client docker-cli tzdata && chmod +x /app/scripts/backup_db.sh && crontab /app/scripts/crontab.txt && crond -f -L /var/log/cron.log"
     networks:
       - crm_network
