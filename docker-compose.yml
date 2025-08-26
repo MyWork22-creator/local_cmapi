@@ -5,7 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: crm-app
+    container_name: localapi
     restart: unless-stopped
     working_dir: /app
     networks:
