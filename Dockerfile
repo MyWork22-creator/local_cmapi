@@ -1,35 +1,26 @@
+FROM python:3.11-slim
 
-FROM python:3.11-slim AS builder
-
+# Set working directory
 WORKDIR /app
-ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential default-libmysqlclient-dev libffi-dev libssl-dev zlib1g-dev \
- && rm -rf /var/lib/apt/lists/*
 
+# Install system dependencies for MySQL client & Python builds
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    default-libmysqlclient-dev \
+    libffi-dev \
+    libssl-dev \
+    zlib1g-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies
 COPY requirements.txt .
-RUN pip wheel --wheel-dir /wheels -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
-
-FROM python:3.11-slim AS runtime
-
-WORKDIR /app
-ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libmariadb3 curl ca-certificates \
- && rm -rf /var/lib/apt/lists/*
-
-COPY --from=builder /wheels /wheels
-RUN pip install --no-index --find-links=/wheels /wheels/*
-
+# Copy project files
 COPY . .
-RUN useradd -m appuser && chown -R appuser:appuser /app
-USER appuser
 
+# Expose FastAPI port
 EXPOSE 8000
-HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-  CMD curl -fsS http://127.0.0.1:8000/ || exit 1
 
-# FastAPI entrypoint → adjust module:object if needed
-CMD ["gunicorn","-k","uvicorn.workers.UvicornWorker","app.main:app","--bind","0.0.0.0:8000","--workers","2","--timeout","60"]
-
+# Run FastAPI with Uvicorn
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

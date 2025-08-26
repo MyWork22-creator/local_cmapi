@@ -1,61 +1,63 @@
-version: "3.9"
+version: '3.8'
 
 services:
-  cm_api:
+  crm_server:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: cm-api
+    container_name: crm-app
     restart: unless-stopped
     working_dir: /app
+    networks:
+      - crm_network
     depends_on:
       mysql:
         condition: service_healthy
     environment:
-      DB_CONNECTION: mysql
-      DB_HOST: mysql
-      DB_PORT: 3306
-      DB_NAME: ${DB_NAME}
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
-    expose:
-      - "8000"
-    labels:
-      caddy: apicm.duckdns.org
-      caddy.reverse_proxy: "{{upstreams 8000}}"
-    networks:
-      - webnet
-      - appnet
- 
-  mysql:
-    image: mysql:8.0.33
-    container_name: mysql-db
-    restart: unless-stopped
-    environment:
-      MYSQL_DATABASE: ${DB_NAME}
-      MYSQL_USER: ${DB_USER}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
-    volumes:
-      - mysql_data:/var/lib/mysql
-    networks:
-      - appnet
-    command:
-      - "--default-authentication-plugin=mysql_native_password"
-      - "--max_connections=100"
-      - "--innodb_buffer_pool_size=256M"
-      - "--performance_schema=0"
-    healthcheck:
-      test: ["CMD-SHELL", "mysql -h 127.0.0.1 -uroot -p\"$${MYSQL_ROOT_PASSWORD}\" -e 'SELECT 1'"]
-      interval: 10s
-      timeout: 5s
-      retries: 30
-      start_period: 60s
-volumes:
-  mysql_data:
+      - DB_CONNECTION=${DB_CONNECTION}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+    ports:
+      - '8100:8000'
 
+  mysql:
+    image: 'mysql:8.0.42'
+    container_name: crm-mysql
+    restart: unless-stopped
+    ports:
+      - '3308:3306'
+    environment:
+      MYSQL_DATABASE: '${DB_NAME}'
+      MYSQL_USER: '${DB_USER}'
+      MYSQL_PASSWORD: '${DB_PASSWORD}'
+      MYSQL_ROOT_PASSWORD: '${DB_ROOT_PASSWORD}'
+    volumes:
+      - 'sail-mysql:/var/lib/mysql'
+    networks:
+      - crm_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      retries: 3
+      timeout: 5s
+  backup:
+    image: alpine:latest
+    container_name: backup-service
+    restart: unless-stopped
+    volumes:
+      - ./scripts:/scripts
+      - /srv/backups:/backups
+      - /var/run/docker.sock:/var/run/docker.sock
+    entrypoint: [ "sh", "-c", "apk add --no-cache bash mysql-client docker-cli tzdata && crond -f -L /var/log/cron.log" ]
+    networks:
+      - crm_network
 networks:
-  webnet:
-    external: true
-  appnet:
+  crm_network:
     driver: bridge
+
+volumes:
+  sail-mysql:
+    driver: local
