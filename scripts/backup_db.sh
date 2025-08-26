@@ -3,7 +3,7 @@ set -e
 
 DATE=$(date +%F_%H-%M-%S)
 BACKUP_DIR=/backups/mysql
-DB_CONTAINER=crm-mysql
+DB_CONTAINER=cm-mysql
 DB_NAME=${DB_NAME:-mydatabase}
 DB_USER=${DB_USER:-root}
 DB_PASS=${DB_ROOT_PASSWORD:-rootpassword}
