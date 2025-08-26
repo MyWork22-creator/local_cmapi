@@ -44,16 +44,17 @@ services:
       retries: 3
       timeout: 5s
   backup:
-    image: alpine:latest
-    container_name: backup-service
-    restart: unless-stopped
-    volumes:
-      - ./scripts:/scripts
-      - /srv/backups:/backups
-      - /var/run/docker.sock:/var/run/docker.sock
-    entrypoint: [ "sh", "-c", "apk add --no-cache bash mysql-client docker-cli tzdata && crond -f -L /var/log/cron.log" ]
-    networks:
-      - crm_network
+  image: alpine:latest
+  container_name: backup-service
+  restart: unless-stopped
+  volumes:
+    - ./scripts:/scripts
+    - /srv/backups:/backups
+    - /var/run/docker.sock:/var/run/docker.sock
+  entrypoint: [ "sh", "-c", "apk add --no-cache bash mysql-client docker-cli tzdata && crontab /scripts/cronjob && crond -f -L /var/log/cron.log" ]
+  networks:
+    - crm_network
+
 networks:
   crm_network:
     driver: bridge
