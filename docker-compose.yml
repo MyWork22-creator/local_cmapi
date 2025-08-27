@@ -37,6 +37,8 @@ services:
       MYSQL_ROOT_PASSWORD: '${DB_ROOT_PASSWORD}'
     volumes:
       - 'sail-mysql:/var/lib/mysql'
+    labels:
+      - "docker-volume-backup.archive-pre=/bin/sh -c "
     networks:
       - crm_network
     healthcheck:
@@ -54,6 +56,8 @@ services:
       - ./scripts:/app/scripts
       - /srv/backups:/backups
       - /var/run/docker.sock:/var/run/docker.sock
+      # Mount static files for backup
+      - ./app/static:/app/static
     environment:
       - DB_NAME=${DB_NAME}
       - DB_USER=${DB_USER}
@@ -61,7 +65,7 @@ services:
       - DB_CONNECTION=${DB_CONNECTION}
       - DB_HOST=${DB_HOST}
       - DB_PORT=${DB_PORT}
-    entrypoint: sh -c "apk add --no-cache bash mysql-client docker-cli tzdata && chmod +x /app/scripts/backup_db.sh && crontab /app/scripts/crontab.txt && crond -f -L /var/log/cron.log"
+    entrypoint: sh -c "apk add --no-cache bash mysql-client docker-cli tzdata rsync && chmod +x /app/scripts/*.sh && crontab /app/scripts/crontab.txt && crond -f -L /var/log/cron.log"
     networks:
       - crm_network
 
