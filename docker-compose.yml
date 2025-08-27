@@ -67,7 +67,7 @@ services:
       - DB_CONNECTION=${DB_CONNECTION}
       - DB_HOST=${DB_HOST}
       - DB_PORT=${DB_PORT}
-    entrypoint: sh -c "apk add --no-cache bash mysql-client docker-cli tzdata rsync && chmod +x /app/scripts/*.sh && crontab /app/scripts/crontab.txt && crond -f -L /var/log/cron.log"
+    entrypoint: sh -c "apk add --no-cache bash mariadb-client docker-cli tzdata rsync && touch /var/log/cron.log && crond -f -L /var/log/cron.log"
     networks:
       - crm_network
 
@@ -78,5 +78,5 @@ networks:
 volumes:
   sail-mysql:
     driver: local
-  app-static:
-    driver: local
+  local-api_app-static:
+    external: true
