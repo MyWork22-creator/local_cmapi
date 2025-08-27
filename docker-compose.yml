@@ -9,7 +9,7 @@ services:
     restart: unless-stopped
     working_dir: /app
     volumes:
-      - app-static:/app/static
+      - local-api_app-static:/app/static
     networks:
       - crm_network
     depends_on:
@@ -59,7 +59,7 @@ services:
       - /srv/backups:/backups
       - /var/run/docker.sock:/var/run/docker.sock
       # Use a named volume for app static files (no host path needed)
-      - app-static:/app/static
+      - local-api_app-static:/app/static
     environment:
       - DB_NAME=${DB_NAME}
       - DB_USER=${DB_USER}
