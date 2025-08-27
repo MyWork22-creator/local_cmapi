@@ -53,11 +53,11 @@ services:
     restart: unless-stopped
     volumes:
       # Maps your local `scripts` folder to `/app/scripts` inside the container.
-      - ./scripts:/app/scripts
+      - ${HOST_PROJECT_DIR:-.}/scripts:/app/scripts
       - /srv/backups:/backups
       - /var/run/docker.sock:/var/run/docker.sock
       # Mount static files for backup
-      - ./app/static:/app/static
+      - ${HOST_PROJECT_DIR:-.}/app/static:/app/static
     environment:
       - DB_NAME=${DB_NAME}
       - DB_USER=${DB_USER}
@@ -65,7 +65,7 @@ services:
       - DB_CONNECTION=${DB_CONNECTION}
       - DB_HOST=${DB_HOST}
       - DB_PORT=${DB_PORT}
-    entrypoint: sh -c "apk add --no-cache bash mysql-client docker-cli tzdata rsync && chmod +x /app/scripts/*.sh && crontab /app/scripts/crontab.txt && crond -f -L /var/log/cron.log"
+    entrypoint: sh -c "apk add --no-cache bash mysql-client docker-cli tzdata rsync && (chmod +x /app/scripts/*.sh || true) && (crontab /app/scripts/crontab.txt || true) && crond -f -L /var/log/cron.log"
     networks:
       - crm_network
 
