@@ -1,10 +1,12 @@
 """
 API endpoints for managing customer data.
 """
-from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status
+from typing import List,Optional
+from datetime import date
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.exc import IntegrityError, DBAPIError
+from sqlalchemy import func
 
 from app.database import get_db
 from app.models.customers import Customer
@@ -63,29 +65,53 @@ def list_customers(
     limit: int = 100,
     offset: int = 0,
     db: Session = Depends(get_db),
-    current_user: User = Depends(check_permissions(["customers:read"]))
+    current_user: User = Depends(check_permissions(["customers:read"])),
+    create_at: Optional[date] = Query(None, description="Filter by specific creation date (YYYY-MM-DD)"),
+    today: bool = Query(True, description="Show only customers created today (default: true)"),
+    all_customers: bool = Query(False, description="Show all customers, ignoring date filters")
 ):
     """
-    Retrieve a paginated list of all customers.
-
-    Includes pagination details and eager-loads the associated user.
+    Retrieve a paginated list of customers. By default, shows customers created today.
+    Use create_at for a specific date or all_customers=true for all customers.
     """
-    total_count = db.query(Customer).count()
-    
+    query = db.query(Customer)
+    filter_date = None
+
+    if all_customers:
+        message = "Show all customers"
+    elif create_at:
+        filter_date = create_at
+        message = f"Show customers created on {create_at}"
+    else:
+        filter_date = date.today()
+        message = f"Show customers created today ({filter_date})"
+
+    if filter_date:
+        query = query.filter(func.date(Customer.create_at) == filter_date)
+
+    total_count = query.count()
+    if total_count == 0:
+        message += " (no customers found)"
+
     items = (
-        db.query(Customer)
-        .options(joinedload(Customer.created_by_user),
-                 joinedload(Customer.bank,innerjoin=False)
+        query
+        .options(
+            joinedload(Customer.created_by_user),
+            joinedload(Customer.bank, innerjoin=False)
         )
         .order_by(Customer.id.desc())
         .limit(limit)
         .offset(offset)
         .all()
     )
-    
-    return ListResponse[CustomerResponse](items=items, total=total_count, limit=limit, offset=offset)
 
-
+    return ListResponse[CustomerResponse](
+        items=items,
+        total=total_count,
+        limit=limit,
+        offset=offset,
+        message=message
+    )
 @router.get("/customers/{id}", response_model=SuccessResponse[CustomerResponse], responses={
     404: {"model": ErrorResponse, "description": "Not Found: Customer not found"}
 })

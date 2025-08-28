@@ -107,6 +107,7 @@ class ListResponse(BaseModel, Generic[T]):
     Type Parameters:
         T: The type of items in the list
     """
+    message: str
     items: List[T] = Field(
         ...,
         description="List of items for the current page"
@@ -152,7 +153,7 @@ class ListResponse(BaseModel, Generic[T]):
         example=False,
         description="Whether there are previous pages"
     )
-
+    
     class Config:
         """Pydantic configuration."""
         json_schema_extra = {

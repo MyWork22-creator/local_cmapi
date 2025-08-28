@@ -92,8 +92,8 @@ def list_banks(
         .offset(offset)
         .all()
     )
-    
-    return ListResponse[BankResponse](items=items, total=total_count, limit=limit, offset=offset)
+    message = f"Found {len(items)} banks out of {total_count} total."
+    return ListResponse[BankResponse](message=message,items=items, total=total_count, limit=limit, offset=offset)
 
 @router.put("/banks/{bank_id}", response_model=SuccessResponse[BankResponse])
 def update_bank(

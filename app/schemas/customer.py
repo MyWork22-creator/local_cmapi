@@ -33,9 +33,6 @@ class CustomerBase(BaseModel):
     bank_id: int = Field(...)
     note: Optional[str] = Field(None, max_length=255)
     
-    
-    
-
 class CustomerCreate(CustomerBase):
     pass
     
@@ -83,6 +80,5 @@ class CustomerResponse(BaseModel):
     create_at: datetime
     update_at: datetime
     create_by_user: int
-
     class Config:
         from_attributes = True
